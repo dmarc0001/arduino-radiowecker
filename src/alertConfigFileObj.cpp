@@ -97,6 +97,8 @@ namespace AlarmClockSrv
 
   /**
    * read devices list from file into devices list, initial load
+   * if there is no file, no config read
+   * devices will be discovered if device is online
    */
   bool AlertConfObj::readDeviceConfig( const String &fileName )
   {
@@ -137,16 +139,6 @@ namespace AlarmClockSrv
   /**
    * save current devices to a json file
    */
-  bool AlertConfObj::writeDeviceConfig( const String & )
-  {
-    if ( xSemaphoreTake( StatusObject::configFileSem, pdMS_TO_TICKS( 6000 ) ) == pdTRUE )
-    {
-      xSemaphoreGive( StatusObject::configFileSem );
-      return true;
-    }
-    return false;
-  }
-
   /**
    * read an json file and parse it
    * return pointer to parsed file

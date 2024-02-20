@@ -20,11 +20,10 @@ namespace AlarmClockSrv
     static const char *tag;
 
     public:
-    static bool readConfig();                         //! read whole config from flash
-    static bool readAlertConfig( const String & );    //! read config from json file
-    static bool saveAlertConfig( const String & );    //! write config to json file
-    static bool readDeviceConfig( const String & );   // read device config to json file
-    static bool writeDeviceConfig( const String & );  //! write device config to json file
+    static bool readConfig();                        //! read whole config from flash
+    static bool readAlertConfig( const String & );   //! read config from json file
+    static bool saveAlertConfig( const String & );   //! write config to json file
+    static bool readDeviceConfig( const String & );  // read device config to json file
 
     private:
     static cJSON *readAndParseFile( const String & );                             //! read and parse an json file

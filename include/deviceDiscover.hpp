@@ -31,5 +31,6 @@ namespace soundtouch
     static DevListPtr discoverSoundTouchDevices();
     static mdns_result_t *getResult( mdns_result_t *, int );
     static IPAddress getIP( mdns_result_t * );
+    static void updateCurrentDeviceList( DevListPtr );
   };
 }  // namespace soundtouch

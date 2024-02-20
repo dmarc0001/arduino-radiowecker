@@ -7,16 +7,19 @@ namespace soundtouch
   using namespace logger;
   using namespace AlarmClockSrv;
 
-  constexpr uint64_t NEXT_TIME_MDNS_SHORT = 4000UL;
-  constexpr uint64_t NEXT_TIME_MDNS = 11000UL;
-  constexpr uint64_t NEXT_TIME_DISCOVER_SHORT = 2500UL;
-  constexpr uint64_t NEXT_TIME_DISCOVER = 120000UL;
+  constexpr uint32_t NEXT_TIME_MDNS_SHORT = 4000UL;
+  constexpr uint32_t NEXT_TIME_MDNS = 11000UL;
+  constexpr uint32_t NEXT_TIME_DISCOVER_SHORT = 2500UL;
+  constexpr uint32_t NEXT_TIME_DISCOVER = 120000UL;
 
   const char *DeviceDiscover::tag{ "DeviceDiscover" };
   bool DeviceDiscover::isInit{ false };
   bool DeviceDiscover::mdnsIsRunning{ false };
   TaskHandle_t DeviceDiscover::taskHandle{ nullptr };
 
+  /**
+   * init some things, start discover thread
+   */
   void DeviceDiscover::init()
   {
     if ( !DeviceDiscover::isInit )
@@ -28,6 +31,9 @@ namespace soundtouch
     }
   }
 
+  /**
+   * discover thread, sleeps the most time :-)
+   */
   void DeviceDiscover::discoverTask( void * )
   {
     static unsigned long nextTimeDiscover{ ( millis() + NEXT_TIME_DISCOVER_SHORT ) };
@@ -89,7 +95,6 @@ namespace soundtouch
       {
         elog.log( DEBUG, "%s: start devices search...", DeviceDiscover::tag );
         DevListPtr services = DeviceDiscover::discoverSoundTouchDevices();
-
         if ( services->size() == 0 )
         {
           elog.log( DEBUG, "%s: start devices search, nothing found.", DeviceDiscover::tag );
@@ -97,10 +102,24 @@ namespace soundtouch
         else
         {
           elog.log( DEBUG, "%s: start devices search, found <%d> services.", DeviceDiscover::tag, services->size() );
+          // update current list
+          DeviceDiscover::updateCurrentDeviceList( services );
         }
         //_soundtouch._tcp.local.
       }
     }  // end while forever
+  }
+
+  void DeviceDiscover::updateCurrentDeviceList( DevListPtr devList )
+  {
+    //
+    // copy all devices, there are in
+    //
+    StatusObject::devList.clear();
+    for ( const auto &entry : *( devList.get() ) )
+    {
+      StatusObject::devList.push_back( entry );
+    }
   }
 
   /**
@@ -259,7 +278,7 @@ namespace soundtouch
   }
 
   /**
-   * start the device discovering task
+   * start the device discovering esp32/RTOS task
    */
   void DeviceDiscover::start()
   {
