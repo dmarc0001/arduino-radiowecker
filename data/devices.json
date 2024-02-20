@@ -1,0 +1,29 @@
+[
+    {
+        "name": "device 001",
+        "ip": "192.1568.1.23",
+        "id": "FF2F12AC44",
+        "webport": "8080",
+        "wsport": "8023",
+        "type": "Bose SoundTouch 300",
+        "note": "Bemerkung"
+    },
+    {
+        "name": "device 002",
+        "ip": "192.1568.1.24",
+        "id": "FF2F12A244",
+        "webport": "8080",
+        "wsport": "8023",
+        "type": "Bose SoundTouch 10",
+        "note": "Bemerkung"
+    },
+    {
+        "name": "device 003",
+        "ip": "192.1568.1.25",
+        "id": "FF56F2AC44",
+        "webport": "8080",
+        "wsport": "8023",
+        "type": "Bose SoundTouch 20",
+        "note": "Bewerkung"
+    }
+]
