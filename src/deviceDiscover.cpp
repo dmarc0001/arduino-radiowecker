@@ -8,9 +8,9 @@ namespace soundtouch
   using namespace AlarmClockSrv;
 
   constexpr uint32_t NEXT_TIME_MDNS_SHORT = 4000UL;
-  constexpr uint32_t NEXT_TIME_MDNS = 11000UL;
+  constexpr uint32_t NEXT_TIME_MDNS = 17000UL;
   constexpr uint32_t NEXT_TIME_DISCOVER_SHORT = 2500UL;
-  constexpr uint32_t NEXT_TIME_DISCOVER = 120000UL;
+  constexpr uint32_t NEXT_TIME_DISCOVER = 350000UL;
 
   const char *DeviceDiscover::tag{ "DeviceDiscover" };
   bool DeviceDiscover::isInit{ false };
@@ -28,6 +28,7 @@ namespace soundtouch
       // make some preparations
       StatusObject::init();
       DeviceDiscover::start();
+      randomSeed( analogRead( 0 ) );
     }
   }
 
@@ -89,8 +90,9 @@ namespace soundtouch
       }
       //
       // ok discover the devices
+      // a little entrophy please
       //
-      nextTimeDiscover = millis() + NEXT_TIME_DISCOVER;
+      nextTimeDiscover = millis() + static_cast< unsigned long >( random( NEXT_TIME_DISCOVER, NEXT_TIME_DISCOVER + 1500UL ) );
       if ( DeviceDiscover::mdnsIsRunning )
       {
         elog.log( DEBUG, "%s: start devices search...", DeviceDiscover::tag );

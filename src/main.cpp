@@ -1,6 +1,7 @@
 /*
   main, hier startet es
 */
+#include <memory>
 #include "elog/eLog.hpp"
 #include "appPreferences.hpp"
 #include "appStructs.hpp"
@@ -12,12 +13,12 @@
 #include "ledStripe.hpp"
 #include "alertConfigFileObj.hpp"
 #include "deviceDiscover.hpp"
+#include "soundtouchDevice.hpp"
 
 void setup()
 {
   using namespace AlarmClockSrv;
   using namespace soundtouch;
-
   using namespace logger;
 
   const char *tag{ "main" };
@@ -65,6 +66,39 @@ void setup()
   DeviceDiscover::init();
 }
 
+std::shared_ptr< soundtouch::SoundtouchDevice > doTestThingsIfOnline()
+{
+  using namespace AlarmClockSrv;
+  using namespace logger;
+  const char *tag{ "test" };
+
+  elog.log( DEBUG, "%s: start soundtouch device...", tag );
+  using namespace soundtouch;
+  using namespace AlarmClockSrv;
+  DeviceEntry device;
+  IPAddress addr;
+  addr.fromString( "192.168.1.68" );
+  device.name = String( "Arbeitszimmer" );
+  device.addr = addr;
+  device.id = String( "689E19653E96" );
+  device.webPort = 8090;
+  device.wsPort = 8080;
+  device.type = String( "Soundtouch" );
+  device.note = String( "bemerkung" );
+
+  std::shared_ptr< SoundtouchDevice > testDev = std::make_shared< SoundtouchDevice >( device );
+  return testDev;
+}
+
+void doTestThingsIfOffline( std::shared_ptr< soundtouch::SoundtouchDevice > testDev )
+{
+  using namespace AlarmClockSrv;
+  using namespace logger;
+  const char *tag{ "test" };
+  elog.log( DEBUG, "%s: delete soundtouch device...", tag );
+  delete testDev.get();
+}
+
 void loop()
 {
   using namespace AlarmClockSrv;
@@ -73,6 +107,7 @@ void loop()
   // next time logger time sync
   static unsigned long setNextTimeCorrect{ ( millis() + ( 1000UL * 21600UL ) ) };
   static auto connected = WlanState::DISCONNECTED;
+  static std::shared_ptr< soundtouch::SoundtouchDevice > testDev;
   //
   // for webserver
   //
@@ -112,11 +147,14 @@ void loop()
         //
         elog.log( INFO, "main: ip connectivity found, start webserver." );
         // TODO: EnvWebServer::start();
+        testDev = doTestThingsIfOnline();
       }
       else
       {
         elog.log( WARNING, "main: ip connectivity lost, stop webserver." );
         // TODO: EnvWebServer::stop();
+        doTestThingsIfOffline( testDev );
+        testDev = nullptr;
       }
     }
     else
