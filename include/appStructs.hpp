@@ -2,12 +2,7 @@
 #include <vector>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-
-namespace soundtouch
-{
-  using XmlMessageList = std::vector< String >;
-  using DecodetMessageList = std::vector< String >;
-}  // namespace soundtouch
+#include "soundTouchDefs.hpp"
 
 namespace alarmclock
 {

@@ -18,5 +18,9 @@ namespace soundtouch
     explicit SoundTouchXMLParser( XmlMessageList &, DecodetMessageList & );
     ~SoundTouchXMLParser();
     bool decodeMessage();
+
+    private:
+    WsMsgType getMessageType( String & );
+    WsMsgUpdateType getUpdateType( String & );
   };
 }  // namespace soundtouch

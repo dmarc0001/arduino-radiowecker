@@ -190,6 +190,12 @@ namespace soundtouch
     return nullptr;
   }
 
+  void SoundTouchDevice::onDecodetMessage( SoundTouchUpdateTmplPtr ptr )
+  {
+    elog.log( DEBUG, "%s: rec decodet msg, type %d", SoundTouchDevice::tag, ptr->msgType );
+    // TODO: implement
+  }
+
   /**
    * task for processing websocket connections in SoundtouchDevice
    */
@@ -234,6 +240,18 @@ namespace soundtouch
           wasEntry = true;
         }
       }
+      for ( auto elem : SoundTouchDevice::instList )
+      {
+        if ( !elem.second->msgList.empty() )
+        {
+          // decodet message in the list => make something
+          SoundTouchUpdateTmplPtr ptr = elem.second->msgList.front();
+          elem.second->msgList.erase( elem.second->msgList.begin() );
+          elem.second->onDecodetMessage( ptr );
+          wasEntry = true;
+        }
+      }
+
       if ( !wasEntry )
         delay( 150 );
     }

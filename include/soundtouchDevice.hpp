@@ -42,6 +42,7 @@ namespace soundtouch
     private:
     void onMessageCallback( WebsocketsMessage );
     void onEventCallback( WebsocketsEvent, String );
+    void onDecodetMessage( SoundTouchUpdateTmplPtr );
     static void start();            //! start task
     static void wsTask( void * );   //! the task fuer websocket
     static void decTask( void * );  //! xml decoder task
