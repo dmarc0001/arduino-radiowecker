@@ -6,7 +6,7 @@
 #include "appPreferences.hpp"
 #include "appStructs.hpp"
 
-namespace AlarmClockSrv
+namespace alarmclock
 {
   class AlertTask
   {
@@ -20,4 +20,4 @@ namespace AlarmClockSrv
     private:
     static void alTask( void * );
   };
-}  // namespace AlarmClockSrv
+}  // namespace alarmclock

@@ -2,7 +2,7 @@
   main, hier startet es
 */
 #include <memory>
-#include "elog/eLog.hpp"
+#include "eLog.hpp"
 #include "appPreferences.hpp"
 #include "appStructs.hpp"
 #include "common.hpp"
@@ -17,7 +17,7 @@
 
 void setup()
 {
-  using namespace AlarmClockSrv;
+  using namespace alarmclock;
   using namespace soundtouch;
   using namespace logger;
 
@@ -29,29 +29,29 @@ void setup()
   Serial.println( "main: program started..." );
   // read persistent config
   Serial.println( "main: init local preferences..." );
-  Prefs::LocalPrefs::init();
+  appprefs::LocalPrefs::init();
   // correct loglevel
-  Loglevel level = static_cast< Loglevel >( Prefs::LocalPrefs::getLogLevel() );
+  Loglevel level = static_cast< Loglevel >( appprefs::LocalPrefs::getLogLevel() );
   elog.addSerialLogging( Serial, "MAIN", level );  // Enable serial logging. We want only INFO or lower logleve.
   elog.setSyslogOnline( false );
   elog.addSyslogLogging( level );
   elog.log( INFO, "main: start with logging..." );
   // set my timezone, i deal with timestamps
-  elog.log( INFO, "%s: set timezone (%s)...", tag, Prefs::LocalPrefs::getTimeZone().c_str() );
-  setenv( "TZ", Prefs::LocalPrefs::getTimeZone().c_str(), 1 );
+  elog.log( INFO, "%s: set timezone (%s)...", tag, appprefs::LocalPrefs::getTimeZone().c_str() );
+  setenv( "TZ", appprefs::LocalPrefs::getTimeZone().c_str(), 1 );
   tzset();
-  static String hName( Prefs::LocalPrefs::getHostName() );
+  static String hName( appprefs::LocalPrefs::getHostName() );
   elog.log( INFO, "%s: hostname: <%s>...", tag, hName.c_str() );
   //
   // check if syslog and/or datalog present
   //
-  IPAddress addr( Prefs::LocalPrefs::getSyslogServer() );
-  uint16_t port( Prefs::LocalPrefs::getSyslogPort() );
+  IPAddress addr( appprefs::LocalPrefs::getSyslogServer() );
+  uint16_t port( appprefs::LocalPrefs::getSyslogPort() );
   elog.log( INFO, "%s: syslog %s:%d", tag, addr.toString().c_str(), port );
   if ( ( addr > 0 ) && ( port > 0 ) )
   {
     elog.log( INFO, "%s: init syslog protocol to %s:%d...", tag, addr.toString().c_str(), port );
-    elog.setUdpClient( udpClient, addr, port, hName.c_str(), Prefs::APPNAME, Prefs::SYSLOG_PRIO, Prefs::SYSLOG_PROTO );
+    elog.setUdpClient( udpClient, addr, port, hName.c_str(), appprefs::APPNAME, appprefs::SYSLOG_PRIO, appprefs::SYSLOG_PROTO );
   }
   elog.log( DEBUG, "%s: init StatusObject...", tag );
   StatusObject::init();
@@ -66,15 +66,15 @@ void setup()
   DeviceDiscover::init();
 }
 
-std::shared_ptr< soundtouch::SoundtouchDevice > doTestThingsIfOnline()
+std::shared_ptr< soundtouch::SoundTouchDevice > doTestThingsIfOnline()
 {
-  using namespace AlarmClockSrv;
+  using namespace alarmclock;
   using namespace logger;
   const char *tag{ "test" };
 
   elog.log( DEBUG, "%s: start soundtouch device...", tag );
   using namespace soundtouch;
-  using namespace AlarmClockSrv;
+  using namespace alarmclock;
   DeviceEntry device;
   IPAddress addr;
   addr.fromString( "192.168.1.68" );
@@ -86,13 +86,13 @@ std::shared_ptr< soundtouch::SoundtouchDevice > doTestThingsIfOnline()
   device.type = String( "Soundtouch" );
   device.note = String( "bemerkung" );
 
-  std::shared_ptr< SoundtouchDevice > testDev = std::make_shared< SoundtouchDevice >( device );
+  std::shared_ptr< SoundTouchDevice > testDev = std::make_shared< SoundTouchDevice >( device );
   return testDev;
 }
 
-void doTestThingsIfOffline( std::shared_ptr< soundtouch::SoundtouchDevice > testDev )
+void doTestThingsIfOffline( std::shared_ptr< soundtouch::SoundTouchDevice > testDev )
 {
-  using namespace AlarmClockSrv;
+  using namespace alarmclock;
   using namespace logger;
   const char *tag{ "test" };
   elog.log( DEBUG, "%s: delete soundtouch device...", tag );
@@ -101,13 +101,13 @@ void doTestThingsIfOffline( std::shared_ptr< soundtouch::SoundtouchDevice > test
 
 void loop()
 {
-  using namespace AlarmClockSrv;
+  using namespace alarmclock;
   using namespace logger;
 
   // next time logger time sync
   static unsigned long setNextTimeCorrect{ ( millis() + ( 1000UL * 21600UL ) ) };
   static auto connected = WlanState::DISCONNECTED;
-  static std::shared_ptr< soundtouch::SoundtouchDevice > testDev;
+  static std::shared_ptr< soundtouch::SoundTouchDevice > testDev;
   //
   // for webserver
   //

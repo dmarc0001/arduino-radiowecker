@@ -3,7 +3,7 @@
 #include <esp_sntp.h>
 #include <WiFiManager.h>
 
-namespace AlarmClockSrv
+namespace alarmclock
 {
   class WifiConfig
   {
@@ -24,4 +24,4 @@ namespace AlarmClockSrv
     static void wifiEventCallback( arduino_event_t * );            //! callback wifi events
     static void configModeCallback( WiFiManager *myWiFiManager );  //! callback for wifi manager ebent
   };
-}  // namespace EnvServer
+}  // namespace alarmclock

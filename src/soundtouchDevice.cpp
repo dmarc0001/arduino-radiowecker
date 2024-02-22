@@ -5,36 +5,36 @@ namespace soundtouch
 {
 
   using namespace websockets;
-  using namespace AlarmClockSrv;
+  using namespace alarmclock;
   using namespace logger;
 
-  const char *SoundtouchDevice::tag{ "soundtouch" };
-  TaskHandle_t SoundtouchDevice::taskHandle{ nullptr };
-  uint32_t SoundtouchDevice::instances{ 0 };
-  InstancesList SoundtouchDevice::instList;
+  const char *SoundTouchDevice::tag{ "soundtouch" };
+  TaskHandle_t SoundTouchDevice::taskHandle{ nullptr };
+  uint32_t SoundTouchDevice::instances{ 0 };
+  InstancesList SoundTouchDevice::instList;
 
-  SoundtouchDevice::SoundtouchDevice( AlarmClockSrv::DeviceEntry &_device ) : device( _device )
+  SoundTouchDevice::SoundTouchDevice( alarmclock::DeviceEntry &_device ) : device( _device )
   {
     //
     // create an instance id
     //
-    ++SoundtouchDevice::instances;
-    this->instance = SoundtouchDevice::instances;
+    ++SoundTouchDevice::instances;
+    this->instance = SoundTouchDevice::instances;
     InstancePtr myInstance = std::make_pair( this->instance, this );
-    SoundtouchDevice::instList.push_back( myInstance );
-    elog.log( INFO, "%s: create Instance: %d", SoundtouchDevice::tag, this->instance );
+    SoundTouchDevice::instList.push_back( myInstance );
+    elog.log( INFO, "%s: create Instance: %d", SoundTouchDevice::tag, this->instance );
 
     // run callback when messages are received
-    wsClient.onMessage( SoundtouchDevice::onMessageCallbackWrapper, this->instance );
+    wsClient.onMessage( SoundTouchDevice::onMessageCallbackWrapper, this->instance );
 
     // // run callback when events are occuring
-    wsClient.onEvent( SoundtouchDevice::onEventsCallbackWrapper, this->instance );
+    wsClient.onEvent( SoundTouchDevice::onEventsCallbackWrapper, this->instance );
 
     // // Connect to server
     char buffer[ 49 ];
     snprintf( buffer, 48, "ws://%s:%d\0", device.addr.toString().c_str(), device.wsPort );
     String interfaceString( buffer );
-    elog.log( INFO, "%s: connect websocket to <%s>", SoundtouchDevice::tag, interfaceString.c_str() );
+    elog.log( INFO, "%s: connect websocket to <%s>", SoundTouchDevice::tag, interfaceString.c_str() );
     //
     // create subprotocol "gabbo"
     // BOSE API description
@@ -52,19 +52,19 @@ namespace soundtouch
   /**
    * destructor, should erase instance from global list
    */
-  SoundtouchDevice::~SoundtouchDevice()
+  SoundTouchDevice::~SoundTouchDevice()
   {
-    if ( SoundtouchDevice::taskHandle )
+    if ( SoundTouchDevice::taskHandle )
     {
-      elog.log( INFO, "%s: kill ws-tread instance: %d", SoundtouchDevice::tag, this->instance );
-      vTaskDelete( SoundtouchDevice::taskHandle );
-      SoundtouchDevice::taskHandle = nullptr;
+      elog.log( INFO, "%s: kill ws-tread instance: %d", SoundTouchDevice::tag, this->instance );
+      vTaskDelete( SoundTouchDevice::taskHandle );
+      SoundTouchDevice::taskHandle = nullptr;
     }
-    for ( auto it = SoundtouchDevice::instList.begin(); it < SoundtouchDevice::instList.end(); it++ )
+    for ( auto it = SoundTouchDevice::instList.begin(); it < SoundTouchDevice::instList.end(); it++ )
     {
       if ( it->first == this->instance )
       {
-        SoundtouchDevice::instList.erase( it );
+        SoundTouchDevice::instList.erase( it );
         break;
       }
     }
@@ -73,70 +73,70 @@ namespace soundtouch
   /**
    * callback function for websocket receiver
    */
-  void SoundtouchDevice::onMessageCallback( WebsocketsMessage _message )
+  void SoundTouchDevice::onMessageCallback( WebsocketsMessage _message )
   {
     if ( _message.isEmpty() )
     {
-      elog.log( DEBUG, "%s: message is empty", SoundtouchDevice::tag );
+      elog.log( DEBUG, "%s: message is empty", SoundTouchDevice::tag );
       return;
     }
     else if ( _message.isText() )
     {
-      elog.log( DEBUG, "%s: msg <%s>", SoundtouchDevice::tag, _message.data().c_str() );
+      elog.log( DEBUG, "%s: msg <%s>", SoundTouchDevice::tag, _message.data().c_str() );
       if ( _message.isComplete() )
       {
-        elog.log( DEBUG, "%s: msg is complete", SoundtouchDevice::tag );
+        elog.log( DEBUG, "%s: msg is complete", SoundTouchDevice::tag );
         // TODO: XML Parsing
       }
       else
       {
-        elog.log( DEBUG, "%s: msg is NOT complete (not implemented yet)", SoundtouchDevice::tag );
+        elog.log( DEBUG, "%s: msg is NOT complete (not implemented yet)", SoundTouchDevice::tag );
       }
     }
     else
     {
-      elog.log( ERROR, "%s: msg is NOT text, so it's not implemented yet", SoundtouchDevice::tag );
+      elog.log( ERROR, "%s: msg is NOT text, so it's not implemented yet", SoundTouchDevice::tag );
     }
   }
 
   /**
    * callback function for websocket receiver
    */
-  void SoundtouchDevice::onEventCallback( WebsocketsEvent _event, String _data )
+  void SoundTouchDevice::onEventCallback( WebsocketsEvent _event, String _data )
   {
     if ( _event == WebsocketsEvent::ConnectionOpened )
     {
-      elog.log( DEBUG, "%s: websocket instance %d connection opened!", SoundtouchDevice::tag, this->instance );
+      elog.log( DEBUG, "%s: websocket instance %d connection opened!", SoundTouchDevice::tag, this->instance );
     }
     else if ( _event == WebsocketsEvent::ConnectionClosed )
     {
-      elog.log( DEBUG, "%s: websocket instance %d connection closed!", SoundtouchDevice::tag, this->instance );
+      elog.log( DEBUG, "%s: websocket instance %d connection closed!", SoundTouchDevice::tag, this->instance );
     }
     else if ( _event == WebsocketsEvent::GotPing )
     {
-      elog.log( DEBUG, "%s: websocket instance %d received ping!", SoundtouchDevice::tag, this->instance );
+      elog.log( DEBUG, "%s: websocket instance %d received ping!", SoundTouchDevice::tag, this->instance );
       wsClient.pong();
     }
     else if ( _event == WebsocketsEvent::GotPong )
     {
-      elog.log( DEBUG, "%s: websocket instance %d received pong!", SoundtouchDevice::tag, this->instance );
+      elog.log( DEBUG, "%s: websocket instance %d received pong!", SoundTouchDevice::tag, this->instance );
     }
   }
 
   /**
    * on received a message (static function) then send message to the right instance
    */
-  void SoundtouchDevice::onMessageCallbackWrapper( WebsocketsMessage _message, uint32_t _instance )
+  void SoundTouchDevice::onMessageCallbackWrapper( WebsocketsMessage _message, uint32_t _instance )
   {
-    SoundtouchDevice *stInstance{ nullptr };
+    SoundTouchDevice *stInstance{ nullptr };
 
     //
     // find instance addr
     //
-    stInstance = SoundtouchDevice::getInstancePtr( _instance );
+    stInstance = SoundTouchDevice::getInstancePtr( _instance );
     if ( !stInstance )
     {
-      elog.log( ERROR, "%s: can't find active websocket instance (id: %d) for processing! ABORT", SoundtouchDevice::tag, _instance );
+      elog.log( ERROR, "%s: can't find active websocket instance (id: %d) for processing! ABORT", SoundTouchDevice::tag, _instance );
       return;
     }
     stInstance->onMessageCallback( _message );
@@ -145,32 +145,38 @@ namespace soundtouch
   /**
    * in received a event, (static function) route the event to the right instance
    */
-  void SoundtouchDevice::onEventsCallbackWrapper( WebsocketsEvent _event, String _data, uint32_t _instance )
+  void SoundTouchDevice::onEventsCallbackWrapper( WebsocketsEvent _event, String _data, uint32_t _instance )
   {
-    SoundtouchDevice *stInstance = SoundtouchDevice::getInstancePtr( _instance );
+    SoundTouchDevice *stInstance = SoundTouchDevice::getInstancePtr( _instance );
     if ( !stInstance )
     {
-      elog.log( ERROR, "%s: can't find active websocket instance (id: %d) for processing! ABORT", SoundtouchDevice::tag, _instance );
+      elog.log( ERROR, "%s: can't find active websocket instance (id: %d) for processing! ABORT", SoundTouchDevice::tag, _instance );
       return;
     }
     stInstance->onEventCallback( _event, _data );
   }
 
-  SoundtouchDevice *SoundtouchDevice::getInstancePtr( uint32_t _instance )
+  /**
+   * find a pointer to the instfance of SoundtouchDevice with an insctance number
+   */
+  SoundTouchDevice *SoundTouchDevice::getInstancePtr( uint32_t _instance )
   {
-    for ( auto elem : SoundtouchDevice::instList )
+    for ( auto elem : SoundTouchDevice::instList )
     {
       if ( elem.first == _instance )
       {
         // instance found!
-        SoundtouchDevice *stInstance = elem.second;
+        SoundTouchDevice *stInstance = elem.second;
         return stInstance;
       }
     }
     return nullptr;
   }
 
-  void SoundtouchDevice::wsTask( void * )
+  /**
+   * task for processing websocket connections in SoundtouchDevice
+   */
+  void SoundTouchDevice::wsTask( void * )
   {
     static unsigned long nextPing{ millis() + 8000UL };
     bool timeToPing{ false };
@@ -179,7 +185,7 @@ namespace soundtouch
     while ( true )
     {
       timeToPing = ( millis() > nextPing );
-      for ( auto elem : SoundtouchDevice::instList )
+      for ( auto elem : SoundTouchDevice::instList )
       {
         if ( timeToPing )
         {
@@ -194,19 +200,22 @@ namespace soundtouch
     }
   }
 
-  void SoundtouchDevice::start()
+  /**
+   * start or restart the SoundtouchDevice's task
+   */
+  void SoundTouchDevice::start()
   {
-    elog.log( logger::INFO, "%s: soundtouch websocket Task start...", SoundtouchDevice::tag );
+    elog.log( logger::INFO, "%s: soundtouch websocket Task start...", SoundTouchDevice::tag );
 
-    if ( SoundtouchDevice::taskHandle )
+    if ( SoundTouchDevice::taskHandle )
     {
-      vTaskDelete( SoundtouchDevice::taskHandle );
-      SoundtouchDevice::taskHandle = nullptr;
+      vTaskDelete( SoundTouchDevice::taskHandle );
+      SoundTouchDevice::taskHandle = nullptr;
     }
     else
     {
-      xTaskCreate( SoundtouchDevice::wsTask, "ws-task", configMINIMAL_STACK_SIZE * 4, nullptr, tskIDLE_PRIORITY,
-                   &SoundtouchDevice::taskHandle );
+      xTaskCreate( SoundTouchDevice::wsTask, "ws-task", configMINIMAL_STACK_SIZE * 4, nullptr, tskIDLE_PRIORITY,
+                   &SoundTouchDevice::taskHandle );
     }
   }
 

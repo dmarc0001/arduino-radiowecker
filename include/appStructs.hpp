@@ -3,7 +3,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
-namespace AlarmClockSrv
+namespace alarmclock
 {
   // previous Declaration
   class AlertEntry;
@@ -90,4 +90,4 @@ namespace AlarmClockSrv
     uint8_t month;              //! if on day, month number (1-12)
   };
 
-}  // namespace AlarmClockSrv
+}  // namespace alarmclock

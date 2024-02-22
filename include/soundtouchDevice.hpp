@@ -12,12 +12,12 @@ namespace soundtouch
 {
   using namespace websockets;
 
-  class SoundtouchDevice;
+  class SoundTouchDevice;
 
-  using InstancePtr = std::pair< uint32_t, SoundtouchDevice * >;
+  using InstancePtr = std::pair< uint32_t, SoundTouchDevice * >;
   using InstancesList = std::vector< InstancePtr >;
 
-  class SoundtouchDevice
+  class SoundTouchDevice
   {
     private:
     static const char *tag;
@@ -26,12 +26,12 @@ namespace soundtouch
     uint32_t instance;
     static InstancesList instList;
     WebsocketsClient wsClient;
-    AlarmClockSrv::DeviceEntry device;
-    SoundtouchDevice();  //! no default constructor!
+    alarmclock::DeviceEntry device;
+    SoundTouchDevice();  //! no default constructor!
 
     public:
-    explicit SoundtouchDevice( AlarmClockSrv::DeviceEntry & );
-    ~SoundtouchDevice();
+    explicit SoundTouchDevice( alarmclock::DeviceEntry & );
+    ~SoundTouchDevice();
 
     private:
     void onMessageCallback( WebsocketsMessage );
@@ -40,6 +40,6 @@ namespace soundtouch
     static void wsTask( void * );  //! the task fuer websocket
     static void onMessageCallbackWrapper( WebsocketsMessage, uint32_t );
     static void onEventsCallbackWrapper( WebsocketsEvent, String, uint32_t );
-    static SoundtouchDevice *getInstancePtr( uint32_t );
+    static SoundTouchDevice *getInstancePtr( uint32_t );
   };
 }  // namespace soundtouch

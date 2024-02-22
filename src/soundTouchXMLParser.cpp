@@ -2,4 +2,12 @@
 
 namespace soundtouch
 {
+  SoundTouchXMLParser::SoundTouchXMLParser()
+  {
+  }
+
+  SoundTouchXMLParser::~SoundTouchXMLParser()
+  {
+  }
+
 }  // namespace soundtouch

@@ -8,7 +8,7 @@
 #include "statics.hpp"
 #include "statusObject.hpp"
 
-namespace AlarmClockSrv
+namespace alarmclock
 {
   const char *StatusObject::tag{ "StatusObject" };
   bool StatusObject::is_init{ false };
@@ -38,7 +38,7 @@ namespace AlarmClockSrv
     // init the filesystem for log and web
     //
     elog.log( DEBUG, "%s: init filesystem...", StatusObject::tag );
-    if ( !SPIFFS.begin( false, Prefs::WEB_PATH, 8, Prefs::WEB_PARTITION_LABEL ) )
+    if ( !SPIFFS.begin( false, appprefs::WEB_PATH, 8, appprefs::WEB_PARTITION_LABEL ) )
     {
       elog.log( INFO, "%s: init failed, FORMAT filesystem...", StatusObject::tag );
       if ( !SPIFFS.format() )
@@ -99,4 +99,4 @@ namespace AlarmClockSrv
     return StatusObject::http_active;
   }
 
-}  // namespace AlarmClockSrv
+}  // namespace alarmclock

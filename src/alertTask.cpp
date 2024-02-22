@@ -3,7 +3,7 @@
 #include "statics.hpp"
 #include "statusObject.hpp"
 
-namespace AlarmClockSrv
+namespace alarmclock
 {
   using namespace logger;
 
@@ -39,4 +39,4 @@ namespace AlarmClockSrv
       xTaskCreate( AlertTask::alTask, "alert-task", configMINIMAL_STACK_SIZE * 4, NULL, tskIDLE_PRIORITY, NULL );
     }
   }
-};  // namespace AlarmClockSrv
+};  // namespace alarmclock

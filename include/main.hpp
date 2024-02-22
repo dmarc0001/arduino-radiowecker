@@ -5,5 +5,5 @@
 
 void setup();
 void loop();
-std::shared_ptr< soundtouch::SoundtouchDevice > doTestThingsIfOnline();
-void doTestThingsIfOffline( std::shared_ptr< soundtouch::SoundtouchDevice > );
+std::shared_ptr< soundtouch::SoundTouchDevice > doTestThingsIfOnline();
+void doTestThingsIfOffline( std::shared_ptr< soundtouch::SoundTouchDevice > );

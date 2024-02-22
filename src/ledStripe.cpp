@@ -5,7 +5,7 @@
 #include "appPreferences.hpp"
 #include "ledColorsDefinition.hpp"
 
-namespace AlarmClockSrv
+namespace alarmclock
 {
   //
   // timer definitions
@@ -18,28 +18,28 @@ namespace AlarmClockSrv
   //
   // color definitions
   //
-  CRGB LEDStripe::wlan_discon_colr{ Prefs::LED_COLOR_WLAN_DISCONN };
-  CRGB LEDStripe::wlan_search_colr{ Prefs::LED_COLOR_WLAN_SEARCH };
-  CRGB LEDStripe::wlan_connect_colr{ Prefs::LED_COLOR_WLAN_SEARCH };
-  CRGB LEDStripe::wlan_connect_and_sync_colr{ Prefs::LED_COLOR_WLAN_CONNECT_AND_SYNC };
-  CRGB LEDStripe::wlan_fail_col{ Prefs::LED_COLOR_WLAN_FAIL };
-  CRGB LEDStripe::http_active{ Prefs::LED_COLOR_HTTP_ACTIVE };
+  CRGB LEDStripe::wlan_discon_colr{ appprefs::LED_COLOR_WLAN_DISCONN };
+  CRGB LEDStripe::wlan_search_colr{ appprefs::LED_COLOR_WLAN_SEARCH };
+  CRGB LEDStripe::wlan_connect_colr{ appprefs::LED_COLOR_WLAN_SEARCH };
+  CRGB LEDStripe::wlan_connect_and_sync_colr{ appprefs::LED_COLOR_WLAN_CONNECT_AND_SYNC };
+  CRGB LEDStripe::wlan_fail_col{ appprefs::LED_COLOR_WLAN_FAIL };
+  CRGB LEDStripe::http_active{ appprefs::LED_COLOR_HTTP_ACTIVE };
 
   const char *LEDStripe::tag{ "LEDStripe" };
   TaskHandle_t LEDStripe::taskHandle{ nullptr };
-  CRGB LEDStripe::leds[ Prefs::LED_STRIPE_COUNT ]{};
-  CRGB LEDStripe::shadow_leds[ Prefs::LED_STRIPE_COUNT ]{};
+  CRGB LEDStripe::leds[ appprefs::LED_STRIPE_COUNT ]{};
+  CRGB LEDStripe::shadow_leds[ appprefs::LED_STRIPE_COUNT ]{};
 
   /**
    * init led system
    */
   void LEDStripe::init()
   {
-    FastLED.addLeds< WS2811, Prefs::LED_STRIPE_RMT_TX_GPIO, Prefs::LED_RGB_ORDER >( leds, Prefs::LED_STRIPE_COUNT )
+    FastLED.addLeds< WS2811, appprefs::LED_STRIPE_RMT_TX_GPIO, appprefs::LED_RGB_ORDER >( leds, appprefs::LED_STRIPE_COUNT )
         .setCorrection( TypicalLEDStrip );
-    FastLED.setBrightness( Prefs::LED_STRIP_BRIGHTNESS );
-    LEDStripe::setLed( Prefs::LED_ALL, false, true );
-    LEDStripe::setLed( Prefs::LED_STATUS, LEDStripe::wlan_discon_colr, true );
+    FastLED.setBrightness( appprefs::LED_STRIP_BRIGHTNESS );
+    LEDStripe::setLed( appprefs::LED_ALL, false, true );
+    LEDStripe::setLed( appprefs::LED_STATUS, LEDStripe::wlan_discon_colr, true );
     LEDStripe::start();
     elog.log( logger::DEBUG, "%s: initialized...", LEDStripe::tag );
   }
@@ -64,7 +64,7 @@ namespace AlarmClockSrv
     using namespace logger;
 
     elog.log( INFO, "%s: LEDStripe Task starting...", LEDStripe::tag );
-    using namespace Prefs;
+    using namespace appprefs;
     int64_t nextWLANLedActionTime{ WLANlongActionDist };
     int64_t nextHTTPLedActionTime{ HTTPActionDarkDist };
     int64_t nowTime = esp_timer_get_time();
@@ -106,7 +106,7 @@ namespace AlarmClockSrv
    */
   int64_t LEDStripe::wlanStateLoop( bool *led_changed )
   {
-    using namespace Prefs;
+    using namespace appprefs;
     static bool wlanLedSwitch{ true };
     static WlanState cWlanState{ WlanState::FAILED };
     if ( cWlanState != StatusObject::getWlanState() )
@@ -148,13 +148,13 @@ namespace AlarmClockSrv
     if ( onOff )
     {
       // ON
-      if ( led == Prefs::LED_ALL )
+      if ( led == appprefs::LED_ALL )
       {
         // all LED
         if ( imediate )
           FastLED.show();
       }
-      if ( led < Prefs::LED_STRIPE_COUNT )
+      if ( led < appprefs::LED_STRIPE_COUNT )
       {
         // okay, one LED switch ON => restore shadow to current
         leds[ led ] = shadow_leds[ led ];
@@ -165,14 +165,14 @@ namespace AlarmClockSrv
     else
     {
       // LED OFF
-      if ( led == Prefs::LED_ALL )
+      if ( led == appprefs::LED_ALL )
       {
         // all LED
         CRGB loc_led{};
         if ( imediate )
           FastLED.showColor( loc_led );
       }
-      if ( led < Prefs::LED_STRIPE_COUNT )
+      if ( led < appprefs::LED_STRIPE_COUNT )
       {
         // okay one ld switch OFF
         leds[ led ].r = 0;
@@ -189,10 +189,10 @@ namespace AlarmClockSrv
    */
   void LEDStripe::setLed( uint8_t led, uint8_t red, uint8_t green, uint8_t blue, bool imediate )
   {
-    if ( led == Prefs::LED_ALL )
+    if ( led == appprefs::LED_ALL )
     {
       // all LED
-      for ( uint8_t i = 0; i < Prefs::LED_STRIPE_COUNT; ++i )
+      for ( uint8_t i = 0; i < appprefs::LED_STRIPE_COUNT; ++i )
       {
         // okay one ld switch OFF
         shadow_leds[ i ].r = leds[ i ].r = red;
@@ -202,7 +202,7 @@ namespace AlarmClockSrv
       if ( imediate )
         FastLED.show();
     }
-    if ( led < Prefs::LED_STRIPE_COUNT )
+    if ( led < appprefs::LED_STRIPE_COUNT )
     {
       // okay one ld switch OFF
       shadow_leds[ led ].r = leds[ led ].r = red;
@@ -218,10 +218,10 @@ namespace AlarmClockSrv
    */
   void LEDStripe::setLed( uint8_t led, CRGB &rgb, bool imediate )
   {
-    if ( led == Prefs::LED_ALL )
+    if ( led == appprefs::LED_ALL )
     {
       // all LED
-      for ( uint8_t i = 0; i < Prefs::LED_STRIPE_COUNT; ++i )
+      for ( uint8_t i = 0; i < appprefs::LED_STRIPE_COUNT; ++i )
       {
         // okay one ld switch OFF
         shadow_leds[ i ] = leds[ i ] = rgb;
@@ -229,7 +229,7 @@ namespace AlarmClockSrv
       if ( imediate )
         FastLED.show();
     }
-    if ( led < Prefs::LED_STRIPE_COUNT )
+    if ( led < appprefs::LED_STRIPE_COUNT )
     {
       // okay one ld switch OFF
       shadow_leds[ led ] = leds[ led ] = rgb;
@@ -243,10 +243,10 @@ namespace AlarmClockSrv
    */
   void LEDStripe::setLed( uint8_t led, uint32_t color, bool imediate )
   {
-    if ( led == Prefs::LED_ALL )
+    if ( led == appprefs::LED_ALL )
     {
       // all LED
-      for ( uint8_t i = 0; i < Prefs::LED_STRIPE_COUNT; ++i )
+      for ( uint8_t i = 0; i < appprefs::LED_STRIPE_COUNT; ++i )
       {
         // okay one ld switch OFF
         shadow_leds[ i ] = leds[ i ] = CRGB( color );
@@ -254,7 +254,7 @@ namespace AlarmClockSrv
       if ( imediate )
         FastLED.show();
     }
-    if ( led < Prefs::LED_STRIPE_COUNT )
+    if ( led < appprefs::LED_STRIPE_COUNT )
     {
       // okay one ld switch OFF
       shadow_leds[ led ] = leds[ led ] = CRGB( color );
@@ -263,4 +263,4 @@ namespace AlarmClockSrv
     }
   }
 
-}  // namespace AlarmClockSrv
+}  // namespace alarmclock

@@ -4,10 +4,10 @@
 #include <esp_wifi.h>
 #include <stdint.h>
 #include <string>
-#include "elog/eLog.hpp"
+#include "eLog.hpp"
 #include <Preferences.h>
 
-namespace Prefs
+namespace appprefs
 {
   //
   // some values are depend from compiling mode...
@@ -58,4 +58,4 @@ namespace Prefs
     static bool getIfPrefsInit();        //! internal, is preferences initialized?
     static bool setIfPrefsInit( bool );  //! internal, set preferences initialized?
   };
-}  // namespace Prefs
+}  // namespace appprefs

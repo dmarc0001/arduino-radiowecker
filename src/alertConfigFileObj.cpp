@@ -2,7 +2,7 @@
 #include "statusObject.hpp"
 #include "statics.hpp"
 
-namespace AlarmClockSrv
+namespace alarmclock
 {
   using namespace logger;
 
@@ -11,8 +11,8 @@ namespace AlarmClockSrv
 
   bool AlertConfObj::readConfig()
   {
-    if ( AlertConfObj::readDeviceConfig( Prefs::LocalPrefs::devicesConfigfile ) )
-      if ( AlertConfObj::readAlertConfig( Prefs::LocalPrefs::alertConfigFile ) )
+    if ( AlertConfObj::readDeviceConfig( appprefs::LocalPrefs::devicesConfigfile ) )
+      if ( AlertConfObj::readAlertConfig( appprefs::LocalPrefs::alertConfigFile ) )
         return true;
     return false;
   }
@@ -115,7 +115,7 @@ namespace AlarmClockSrv
       cJSON *elem;
       cJSON_ArrayForEach( elem, jsonObject )
       {
-        AlarmClockSrv::DeviceEntry devElem;
+        alarmclock::DeviceEntry devElem;
         //
         // every element
         //
@@ -362,4 +362,4 @@ namespace AlarmClockSrv
     }
     return deviceList;
   }
-}  // namespace AlarmClockSrv
+}  // namespace alarmclock

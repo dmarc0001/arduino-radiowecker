@@ -5,7 +5,7 @@
 namespace soundtouch
 {
   using namespace logger;
-  using namespace AlarmClockSrv;
+  using namespace alarmclock;
 
   constexpr uint32_t NEXT_TIME_MDNS_SHORT = 4000UL;
   constexpr uint32_t NEXT_TIME_MDNS = 17000UL;
@@ -132,7 +132,7 @@ namespace soundtouch
     //
     // start the daemon with the own hostname
     //
-    String myInstanceName( Prefs::LocalPrefs::getHostName() );
+    String myInstanceName( appprefs::LocalPrefs::getHostName() );
     myInstanceName.toLowerCase();
 
     if ( !DeviceDiscover::mdnsIsRunning )

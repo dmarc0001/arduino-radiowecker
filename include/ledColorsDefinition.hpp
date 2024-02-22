@@ -1,7 +1,7 @@
 #pragma once
 #include <FastLED.h>
 
-namespace Prefs
+namespace appprefs
 {
   // LED_COLOR_XXX uint32 in hex: RED-GREEN-BLUE
   constexpr uint32_t LED_COLOR_WHITE{ 0xFFFFFF };       //! LED WHITE
@@ -17,4 +17,4 @@ namespace Prefs
   constexpr uint32_t LED_COLOR_WLAN_FAIL{ 0x0a0000 };
   constexpr uint32_t LED_COLOR_HTTP_ACTIVE{ 0x808080 };
 
-}  // namespace Prefs
+}  // namespace appprefs

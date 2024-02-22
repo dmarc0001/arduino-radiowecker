@@ -2,7 +2,7 @@
 #include "wifiConfig.hpp"
 #include "statusObject.hpp"
 
-namespace AlarmClockSrv
+namespace alarmclock
 {
   using namespace logger;
 
@@ -16,7 +16,7 @@ namespace AlarmClockSrv
     char hostname[ 32 ];
     elog.log( INFO, "%s: initialize wifi...", WifiConfig::tag );
     uint16_t chip = static_cast< uint16_t >( ESP.getEfuseMac() >> 32 );
-    snprintf( hostname, 32, "%s-%08X", Prefs::DEFAULT_HOSTNAME, chip );
+    snprintf( hostname, 32, "%s-%08X", appprefs::DEFAULT_HOSTNAME, chip );
     WiFi.setHostname( hostname );
     WiFi.mode( WIFI_STA );
     WiFi.onEvent( WifiConfig::wifiEventCallback );
@@ -149,4 +149,4 @@ namespace AlarmClockSrv
     elog.log( INFO, "%s: config callback...OK", WifiConfig::tag );
   }
 
-}  // namespace EnvServer
+}  // namespace alarmclock

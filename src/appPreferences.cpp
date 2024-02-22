@@ -1,7 +1,7 @@
 #include "appPreferences.hpp"
 #include "common.hpp"
 
-namespace Prefs
+namespace appprefs
 {
   constexpr const char *CHECKVAL{ "confInit" };
   constexpr const char *INITVAL{ "wasInit" };
@@ -30,7 +30,7 @@ namespace Prefs
       Serial.println( "first-time-init preferences..." );
       char hostname[ 32 ];
       uint16_t chip = static_cast< uint16_t >( ESP.getEfuseMac() >> 32 );
-      snprintf( hostname, 32, "%s-%08X", Prefs::DEFAULT_HOSTNAME, chip );
+      snprintf( hostname, 32, "%s-%08X", appprefs::DEFAULT_HOSTNAME, chip );
       String hn( &hostname[ 0 ] );
       LocalPrefs::lPref.putUInt( SYSLOGSRV, 0U );
       LocalPrefs::lPref.putUShort( SYSLOGPORT, ( uint16_t ) 514 );
@@ -96,7 +96,7 @@ namespace Prefs
    */
   String LocalPrefs::getHostName()
   {
-    return ( LocalPrefs::lPref.getString( LOCAL_HOSTNAME, Prefs::DEFAULT_HOSTNAME ) );
+    return ( LocalPrefs::lPref.getString( LOCAL_HOSTNAME, appprefs::DEFAULT_HOSTNAME ) );
   }
 
   /**
@@ -152,4 +152,4 @@ namespace Prefs
     return LocalPrefs::lPref.remove( CHECKVAL );
   }
 
-}  // end namespace Prefs
+}  // namespace appprefs
