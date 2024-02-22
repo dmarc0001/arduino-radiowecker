@@ -59,7 +59,6 @@ namespace soundtouch
     String attrName;
     String elemName;
     String attrVal;
-    // SoundTouchUpdateTmplPtr updatePtr;
     SoundTouchUpdateTmpl *updatePtr{ nullptr };
     const char *doc = msg.c_str();
     for ( ; *doc; doc++ )
@@ -100,7 +99,6 @@ namespace soundtouch
               {
                 // make an object for volume
                 updatePtr = new SoundTouchVolume();
-                updatePtr->msgType = MSG_UPDATE_VOLUME;
               }
               break;
             case 2:
@@ -110,22 +108,7 @@ namespace soundtouch
               if ( updatePtr->msgType == MSG_UPDATE_VOLUME )
               {
                 elog.log( DEBUG, "%s: property.sub <%s>...", SoundTouchXMLParser::tag, elemName.c_str() );
-                SoundTouchVolume *dev = static_cast< SoundTouchVolume * >( updatePtr );
-                dev->isValid = true;
-                {
-                  if ( elemName.equals( UPDATE_PROPERTY_TARGETVOL ) )
-                  {
-                    dev->targetVol = static_cast< uint8_t >( attrVal.toInt() & 0xff );
-                  }
-                  else if ( elemName.equals( UPDATE_PROPERTY_CURRVOL ) )
-                  {
-                    dev->currVol = static_cast< uint8_t >( attrVal.toInt() & 0xff );
-                  }
-                  else if ( elemName.equals( UPDATE_PROPERTY_MUTEVOL ) )
-                  {
-                    dev->currVol = attrVal.equals( "true" ) ? true : false;
-                  }
-                }
+                setVolumeMessageSubPropertys( updatePtr, elemName, attrVal );
               }
               break;
           }
@@ -185,6 +168,33 @@ namespace soundtouch
         msgList.push_back( savePtr );
       }
     return !isError;
+  }
+
+  /**
+   * set sub property in volume setting
+   */
+  bool SoundTouchXMLParser::setVolumeMessageSubPropertys( SoundTouchUpdateTmpl *ptr, String &elemName, String &attrVal )
+  {
+    //
+    // polymorph class, confert pointer
+    //
+    SoundTouchVolume *dev = static_cast< SoundTouchVolume * >( ptr );
+    //
+    if ( elemName.equals( UPDATE_PROPERTY_TARGETVOL ) )
+    {
+      dev->targetVol = static_cast< uint8_t >( attrVal.toInt() & 0xff );
+    }
+    else if ( elemName.equals( UPDATE_PROPERTY_CURRVOL ) )
+    {
+      dev->currVol = static_cast< uint8_t >( attrVal.toInt() & 0xff );
+    }
+    else if ( elemName.equals( UPDATE_PROPERTY_MUTEVOL ) )
+    {
+      dev->currVol = attrVal.equals( "true" ) ? true : false;
+    }
+    if ( dev->currVol != 255 && dev->targetVol != 255 )
+      dev->isValid = true;
+    return dev->isValid;
   }
 
   /**

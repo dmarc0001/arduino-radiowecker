@@ -53,16 +53,20 @@ namespace soundtouch
   class SoundTouchUpdateTmpl
   {
     public:
-    WsMsgUpdateType msgType;  //! user act or update
-    bool isValid{ false };    //! have to set valid
+    WsMsgUpdateType msgType{ MSG_UNKNOWN };  //! user act or update
+    bool isValid{ false };                   //! have to set valid
   };
 
   class SoundTouchVolume : public SoundTouchUpdateTmpl
   {
     public:
-    uint8_t targetVol;  //! volume should set to
-    uint8_t currVol;    //! current volume
-    bool mute;          //! mute device
+    uint8_t targetVol{ 255 };  //! volume should set to
+    uint8_t currVol{ 255 };    //! current volume
+    bool mute{ false };        //! mute device
+    SoundTouchVolume()
+    {
+      this->msgType = MSG_UPDATE_VOLUME;
+    };
   };
 
   using SoundTouchUpdateTmplPtr = std::shared_ptr< SoundTouchUpdateTmpl >;
