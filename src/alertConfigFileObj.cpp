@@ -7,7 +7,7 @@ namespace alarmclock
   using namespace logger;
 
   // AlertConfObj
-  const char *AlertConfObj::tag{ "AlertConfObj" };
+  const char *AlertConfObj::tag{ "alertconfig" };
 
   bool AlertConfObj::readConfig()
   {

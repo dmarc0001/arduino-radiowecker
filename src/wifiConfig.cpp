@@ -6,7 +6,7 @@ namespace alarmclock
 {
   using namespace logger;
 
-  const char *WifiConfig::tag{ "WifiConfig" };
+  const char *WifiConfig::tag{ "wificonf" };
   bool WifiConfig::is_sntp_init{ false };
   WiFiManager WifiConfig::wm;
   WiFiManagerParameter WifiConfig::custom_field;

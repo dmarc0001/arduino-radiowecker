@@ -12,7 +12,7 @@ namespace soundtouch
   constexpr uint32_t NEXT_TIME_DISCOVER_SHORT = 2500UL;
   constexpr uint32_t NEXT_TIME_DISCOVER = 350000UL;
 
-  const char *DeviceDiscover::tag{ "DeviceDiscover" };
+  const char *DeviceDiscover::tag{ "devdiscover" };
   bool DeviceDiscover::isInit{ false };
   bool DeviceDiscover::mdnsIsRunning{ false };
   TaskHandle_t DeviceDiscover::taskHandle{ nullptr };

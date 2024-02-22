@@ -7,7 +7,7 @@ namespace alarmclock
 {
   using namespace logger;
 
-  const char *AlertTask::tag{ "alertTask" };
+  const char *AlertTask::tag{ "alerttask" };
   bool AlertTask::isRunning{ false };
 
   void AlertTask::alTask( void * )

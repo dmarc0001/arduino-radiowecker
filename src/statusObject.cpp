@@ -10,7 +10,7 @@
 
 namespace alarmclock
 {
-  const char *StatusObject::tag{ "StatusObject" };
+  const char *StatusObject::tag{ "statusobj" };
   bool StatusObject::is_init{ false };
   bool StatusObject::is_running{ false };
   bool StatusObject::is_spiffs{ false };

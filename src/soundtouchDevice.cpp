@@ -1,3 +1,4 @@
+#include <utility>
 #include "soundtouchDevice.hpp"
 #include "statics.hpp"
 
@@ -9,28 +10,37 @@ namespace soundtouch
   using namespace logger;
 
   const char *SoundTouchDevice::tag{ "soundtouch" };
-  TaskHandle_t SoundTouchDevice::taskHandle{ nullptr };
+  TaskHandle_t SoundTouchDevice::wsTaskHandle{ nullptr };
+  TaskHandle_t SoundTouchDevice::decTaskHandle{ nullptr };
   uint32_t SoundTouchDevice::instances{ 0 };
   InstancesList SoundTouchDevice::instList;
 
   SoundTouchDevice::SoundTouchDevice( alarmclock::DeviceEntry &_device ) : device( _device )
   {
     //
-    // create an instance id
+    // create an instance and  a instance id
     //
     ++SoundTouchDevice::instances;
     this->instance = SoundTouchDevice::instances;
     InstancePtr myInstance = std::make_pair( this->instance, this );
     SoundTouchDevice::instList.push_back( myInstance );
     elog.log( INFO, "%s: create Instance: %d", SoundTouchDevice::tag, this->instance );
-
+    //
+    // make callbacks
     // run callback when messages are received
+    //
     wsClient.onMessage( SoundTouchDevice::onMessageCallbackWrapper, this->instance );
-
-    // // run callback when events are occuring
+    //
+    // run callback when events are occuring
+    //
     wsClient.onEvent( SoundTouchDevice::onEventsCallbackWrapper, this->instance );
-
-    // // Connect to server
+    //
+    // make a decoder object (unique deletes if object will delete)
+    //
+    parser = SoundTouchXMLParserPtr( new SoundTouchXMLParser( xmlList, msgList ) );
+    //
+    // Connect to server
+    //
     char buffer[ 49 ];
     snprintf( buffer, 48, "ws://%s:%d\0", device.addr.toString().c_str(), device.wsPort );
     String interfaceString( buffer );
@@ -54,11 +64,17 @@ namespace soundtouch
    */
   SoundTouchDevice::~SoundTouchDevice()
   {
-    if ( SoundTouchDevice::taskHandle )
+    if ( SoundTouchDevice::wsTaskHandle )
     {
       elog.log( INFO, "%s: kill ws-tread instance: %d", SoundTouchDevice::tag, this->instance );
-      vTaskDelete( SoundTouchDevice::taskHandle );
-      SoundTouchDevice::taskHandle = nullptr;
+      vTaskDelete( SoundTouchDevice::wsTaskHandle );
+      SoundTouchDevice::wsTaskHandle = nullptr;
+    }
+    if ( SoundTouchDevice::decTaskHandle )
+    {
+      elog.log( INFO, "%s: kill dec-tread instance: %d", SoundTouchDevice::tag, this->instance );
+      vTaskDelete( SoundTouchDevice::decTaskHandle );
+      SoundTouchDevice::decTaskHandle = nullptr;
     }
     for ( auto it = SoundTouchDevice::instList.begin(); it < SoundTouchDevice::instList.end(); it++ )
     {
@@ -82,11 +98,12 @@ namespace soundtouch
     }
     else if ( _message.isText() )
     {
-      elog.log( DEBUG, "%s: msg <%s>", SoundTouchDevice::tag, _message.data().c_str() );
       if ( _message.isComplete() )
       {
-        elog.log( DEBUG, "%s: msg is complete", SoundTouchDevice::tag );
-        // TODO: XML Parsing
+        elog.log( DEBUG, "%s: msg (complete) received.", SoundTouchDevice::tag );
+        // move the message to queue for decoding
+        xmlList.push_back( std::move( _message.data() ) );
+        return;
       }
       else
       {
@@ -201,21 +218,56 @@ namespace soundtouch
   }
 
   /**
+   * task for decoding incomming xml messages
+   */
+  void SoundTouchDevice::decTask( void * )
+  {
+    while ( true )
+    {
+      bool wasEntry{ false };
+      for ( auto elem : SoundTouchDevice::instList )
+      {
+        if ( !elem.second->xmlList.empty() )
+        {
+          // message in the list => decode
+          elem.second->parser->decodeMessage();
+          wasEntry = true;
+        }
+      }
+      if ( !wasEntry )
+        delay( 150 );
+    }
+  }
+
+  /**
    * start or restart the SoundtouchDevice's task
    */
   void SoundTouchDevice::start()
   {
-    elog.log( logger::INFO, "%s: soundtouch websocket Task start...", SoundTouchDevice::tag );
+    elog.log( logger::INFO, "%s: soundtouch websocket task start...", SoundTouchDevice::tag );
 
-    if ( SoundTouchDevice::taskHandle )
+    if ( SoundTouchDevice::wsTaskHandle )
     {
-      vTaskDelete( SoundTouchDevice::taskHandle );
-      SoundTouchDevice::taskHandle = nullptr;
+      vTaskDelete( SoundTouchDevice::wsTaskHandle );
+      SoundTouchDevice::wsTaskHandle = nullptr;
     }
     else
     {
       xTaskCreate( SoundTouchDevice::wsTask, "ws-task", configMINIMAL_STACK_SIZE * 4, nullptr, tskIDLE_PRIORITY,
-                   &SoundTouchDevice::taskHandle );
+                   &SoundTouchDevice::wsTaskHandle );
+    }
+
+    elog.log( logger::INFO, "%s: soundtouch xml decoder task start...", SoundTouchDevice::tag );
+
+    if ( SoundTouchDevice::decTaskHandle )
+    {
+      vTaskDelete( SoundTouchDevice::decTaskHandle );
+      SoundTouchDevice::decTaskHandle = nullptr;
+    }
+    else
+    {
+      xTaskCreate( SoundTouchDevice::decTask, "xml-task", configMINIMAL_STACK_SIZE * 4, nullptr, tskIDLE_PRIORITY,
+                   &SoundTouchDevice::decTaskHandle );
     }
   }
 
