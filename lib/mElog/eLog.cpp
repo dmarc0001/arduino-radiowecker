@@ -1,4 +1,4 @@
-#include "elog/eLog.hpp"
+#include "eLog.hpp"
 
 /* Compiler options available:
     LOGGER_DISABLE_SD (not default)

@@ -37,6 +37,7 @@ namespace soundtouch
     elog.log( INFO, "%s: connect websocket to <%s>", SoundtouchDevice::tag, interfaceString.c_str() );
     //
     // create subprotocol "gabbo"
+    // BOSE API description
     //
     String key1( "Sec-WebSocket-Protocol" );
     String value( "gabbo" );
@@ -69,6 +70,9 @@ namespace soundtouch
     }
   }
 
+  /**
+   * callback function for websocket receiver
+   */
   void SoundtouchDevice::onMessageCallback( WebsocketsMessage _message )
   {
     if ( _message.isEmpty() )
@@ -76,21 +80,28 @@ namespace soundtouch
       elog.log( DEBUG, "%s: message is empty", SoundtouchDevice::tag );
       return;
     }
-    if ( _message.isText() )
+    else if ( _message.isText() )
     {
       elog.log( DEBUG, "%s: msg <%s>", SoundtouchDevice::tag, _message.data().c_str() );
       if ( _message.isComplete() )
       {
         elog.log( DEBUG, "%s: msg is complete", SoundtouchDevice::tag );
+        // TODO: XML Parsing
       }
       else
       {
-        elog.log( DEBUG, "%s: msg is NOT complete yet", SoundtouchDevice::tag );
+        elog.log( DEBUG, "%s: msg is NOT complete (not implemented yet)", SoundtouchDevice::tag );
       }
-      return;
+    }
+    else
+    {
+      elog.log( ERROR, "%s: msg is NOT text, so it's not implemented yet", SoundtouchDevice::tag );
     }
   }
 
+  /**
+   * callback function for websocket receiver
+   */
   void SoundtouchDevice::onEventCallback( WebsocketsEvent _event, String _data )
   {
     if ( _event == WebsocketsEvent::ConnectionOpened )
@@ -99,7 +110,7 @@ namespace soundtouch
     }
     else if ( _event == WebsocketsEvent::ConnectionClosed )
     {
-      elog.log( DEBUG, "%s: websocket instance %d connection closed!", SoundtouchDevice::tag,this->instance );
+      elog.log( DEBUG, "%s: websocket instance %d connection closed!", SoundtouchDevice::tag, this->instance );
     }
     else if ( _event == WebsocketsEvent::GotPing )
     {
