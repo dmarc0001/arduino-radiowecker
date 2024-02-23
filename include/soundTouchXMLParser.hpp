@@ -7,6 +7,19 @@
 
 namespace soundtouch
 {
+  struct SoundTouchXmlLoopParams
+  {
+    bool isError{ false };
+    WsMsgType type{ WS_UNKNOWN };
+    uint8_t depth{ 0 };
+    String elemName;
+    String piVal;
+    String attrName;
+    String attrVal;
+    SoundTouchUpdateTmpl *updatePtr{ nullptr };
+    SoundTouchZoneMember *zoneMember{ nullptr };
+  };
+
   class SoundTouchXMLParser
   {
     private:
@@ -20,6 +33,9 @@ namespace soundtouch
     bool decodeMessage();
 
     private:
+    void computeElemStart( SoundTouchXmlLoopParams & );
+    void computeElemEnd( SoundTouchXmlLoopParams & );
+    void computeAttrEnd( SoundTouchXmlLoopParams & );
     WsMsgType getMessageType( String & );
     WsMsgUpdateType getUpdateType( String & );
     WsPlayStatus getPlayingType( String & );

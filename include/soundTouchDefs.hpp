@@ -42,6 +42,8 @@ namespace soundtouch
   constexpr const char *UPDATE_PROPERTY_NPLAY_PLAYSTATE_INVALIDPLAY{ "INVALID_PLAY_STATE" };  //! playstate
   constexpr const char *UPDATE_PROPERTY_NPLAY_STREAMTYPE_RADIO{ "RADIO_STREAMING" };          //! streamtype
   constexpr const char *UPDATE_PROPERTY_NPLAY_STREAMTYPE_ONDEMAND{ "TRACK_ONDEMAND" };        //! streamtype
+  constexpr const char *UPDATE_PROPERTY_ZONE_ZONE{ "zone" };
+  constexpr const char *UPDATE_PROPERTY_ZONE_ATTRIB_MASTER{ "master" };
 
   /**
    * defines which kind of ws message we have
@@ -110,8 +112,14 @@ namespace soundtouch
     bool isPresetable;
   };
 
+  struct SoundTouchZoneMember
+  {
+    IPAddress ip;  //! ip of the zone member
+    String id;     //! id (mac) of the zone member
+  };
+
   /**
-   * base class for polymorph classes to use teh same typed poiuntzrer for all subclasses
+   * base class for polymorph classes to use teh same typed pointer for all subclasses
    */
   class SoundTouchUpdateTmpl
   {
@@ -164,22 +172,48 @@ namespace soundtouch
       // make the right type
       this->msgType = MSG_UPDATE_NOW_PLAYING_CHANGED;
     };
+    // <nowPlaying deviceID="689E19653E96" source="TUNEIN" sourceAccount="">
+    //   <ContentItem source="TUNEIN" type="stationurl" location="/v1/playback/station/s24950" sourceAccount="" isPresetable="true">
+    //     <itemName>91.4 Berliner Rundfunk</itemName>
+    //     <containerArt>http://cdn-profiles.tunein.com/s24950/images/logoq.jpg?t=160315</containerArt>
+    //   </ContentItem>
+    //   <track>Berliner Rundfunk</track>
+    //   <artist>Berliner Rundfunk 91.4 - Die besten Hits aller Zeiten</artist>
+    //   <album></album>
+    //   <stationName>Berliner Rundfunk</stationName>
+    //   <art artImageStatus="IMAGE_PRESENT">http://cdn-profiles.tunein.com/s24950/images/logog.jpg?t=637387494910000000</art>
+    //   <favoriteEnabled />
+    //   <playStatus>BUFFERING_STATE</playStatus>
+    //   <streamType>RADIO_STREAMING</streamType>
+    // </nowPlaying>
   };
-  // <nowPlaying deviceID="689E19653E96" source="TUNEIN" sourceAccount="">
-  //   <ContentItem source="TUNEIN" type="stationurl" location="/v1/playback/station/s24950" sourceAccount="" isPresetable="true">
-  //     <itemName>91.4 Berliner Rundfunk</itemName>
-  //     <containerArt>http://cdn-profiles.tunein.com/s24950/images/logoq.jpg?t=160315</containerArt>
-  //   </ContentItem>
-  //   <track>Berliner Rundfunk</track>
-  //   <artist>Berliner Rundfunk 91.4 - Die besten Hits aller Zeiten</artist>
-  //   <album></album>
-  //   <stationName>Berliner Rundfunk</stationName>
-  //   <art artImageStatus="IMAGE_PRESENT">http://cdn-profiles.tunein.com/s24950/images/logog.jpg?t=637387494910000000</art>
-  //   <favoriteEnabled />
-  //   <playStatus>BUFFERING_STATE</playStatus>
-  //   <streamType>RADIO_STREAMING</streamType>
-  // </nowPlaying>
 
+  /**
+   * class for message with zone updates
+   */
+  class SoundTouchZoneUpdate : public SoundTouchUpdateTmpl
+  {
+    public:
+    String masterID;                              //! if this == 0 no zone
+    std::vector< SoundTouchZoneMember > members;  // if zize == 0 no zone
+    SoundTouchZoneUpdate()
+    {
+      // make the right type
+      this->msgType = MSG_UPDATE_ZONE;
+    };
+    // <updates deviceID="689E19653E96">
+    //   <zoneUpdated>
+    //     <zone master="689E19653E96">
+    //       <member ipaddress="192.168.1.68">
+    //         689E19653E96
+    //       </member>
+    //       <member ipaddress="192.168.1.20">
+    //         F45EABFBCD9A
+    //       </member>
+    //     </zone>
+    //   </zoneUpdated>
+    // </updates>
+  };
   //
   // base class for polymorph classes
   //
@@ -190,6 +224,7 @@ namespace soundtouch
   //
   using SoundTouchVolumePtr = std::shared_ptr< SoundTouchVolume >;
   using SoundTouchNowPlayingUpdatePtr = std::shared_ptr< SoundTouchNowPlayingUpdate >;
+  using SoundTouchZoneUpdatePtr = std::shared_ptr< SoundTouchZoneUpdate >;
 
   //
   // easyer for semantic
