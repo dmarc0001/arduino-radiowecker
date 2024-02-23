@@ -95,20 +95,53 @@ namespace soundtouch
               break;
             case 1:
               elog.log( DEBUG, "%s: update type is <%s>...", SoundTouchXMLParser::tag, elemName.c_str() );
-              if ( ( type == WS_UPDATES ) && ( getUpdateType( elemName ) == MSG_UPDATE_VOLUME ) )
+              if ( type == WS_UPDATES )
               {
-                // make an object for volume
-                updatePtr = new SoundTouchVolume();
+                switch ( getUpdateType( elemName ) )
+                {
+                  case MSG_UPDATE_VOLUME:
+                    // make an object for volume
+                    updatePtr = new SoundTouchVolume();
+                    break;
+                  case MSG_UPDATE_NOW_PLAYING_CHANGED:
+                    // make an object for nowPlayingUpdate
+                    updatePtr = new SoundTouchNowPlayingUpdate();
+                    break;
+                  default:
+                    if ( updatePtr )
+                    {
+                      free( updatePtr );
+                      updatePtr = nullptr;
+                    }
+                    elog.log( INFO, "%s: update type <%s> not implemented (yet?)...", SoundTouchXMLParser::tag, elemName.c_str() );
+                    break;
+                }
               }
               break;
             case 2:
               elog.log( DEBUG, "%s: update property <%s>...", SoundTouchXMLParser::tag, elemName.c_str() );
               break;
             case 3:
-              if ( updatePtr->getUpdateType() == MSG_UPDATE_VOLUME )
+              elog.log( DEBUG, "%s: property.sub <%s>...", SoundTouchXMLParser::tag, elemName.c_str() );
+              if ( updatePtr )
               {
-                elog.log( DEBUG, "%s: property.sub <%s>...", SoundTouchXMLParser::tag, elemName.c_str() );
-                setVolumeMessageSubPropertys( updatePtr, elemName, attrVal );
+                switch ( updatePtr->getUpdateType() )
+                {
+                  case MSG_UPDATE_VOLUME:
+                    setVolumeMessageSubPropertys( updatePtr, elemName, attrVal );
+                    break;
+                  case MSG_UPDATE_NOW_PLAYING_CHANGED:
+                    setNowPlayingMessageSubPropertys( updatePtr, elemName, attrVal );
+                    break;
+                  default:
+                    if ( updatePtr )
+                    {
+                      free( updatePtr );
+                      updatePtr = nullptr;
+                    }
+                    elog.log( INFO, "%s: property.sub <%s> not implemented (yet?)...", SoundTouchXMLParser::tag, elemName.c_str() );
+                    break;
+                }
               }
               break;
           }
@@ -165,9 +198,69 @@ namespace soundtouch
       if ( updatePtr->isValid )
       {
         SoundTouchUpdateTmplPtr savePtr( std::move( updatePtr ) );
+        updatePtr = nullptr;
         msgList.push_back( savePtr );
       }
     return !isError;
+  }
+
+  bool SoundTouchXMLParser::setNowPlayingMessageSubPropertys( SoundTouchUpdateTmpl *ptr, String &elemName, String &attrVal )
+  {
+    //
+    // polymorph class, convert pointer
+    //
+    SoundTouchNowPlayingUpdate *dev = static_cast< SoundTouchNowPlayingUpdate * >( ptr );
+    if ( elemName.equals( UPDATE_PROPERTY_NPLAY_CONTENT ) )
+    {
+      // subentry contenItem found
+      // not nessesary here
+    }
+    else if ( elemName.equals( UPDATE_PROPERTY_NPLAY_TRACK ) )
+    {
+      // which track is playing
+      dev->track = attrVal;
+    }
+    else if ( elemName.equals( UPDATE_PROPERTY_NPLAY_ALBUM ) )
+    {
+      // which album is playing
+      dev->album = attrVal;
+    }
+    else if ( elemName.equals( UPDATE_PROPERTY_NPLAY_STATIONNAME ) )
+    {
+      // which album is playing
+      dev->album = attrVal;
+    }
+    else if ( elemName.equals( UPDATE_PROPERTY_NPLAY_ART ) )
+    {
+      // which album is playing
+      dev->art = attrVal;
+    }
+    else if ( elemName.equals( UPDATE_PROPERTY_NPLAY_PLAYSTATUS ) )
+    {
+      // which album is playing
+      dev->playStatus = getPlayingType( attrVal );
+      dev->isValid = true;
+    }
+    else if ( elemName.equals( UPDATE_PROPERTY_NPLAY_STREAMTYPE ) )
+    {
+      // which album is playing
+      dev->streamingType = getStreamingType( attrVal );
+    }
+    return dev->isValid;
+    // <nowPlaying deviceID="689E19653E96" source="TUNEIN" sourceAccount="">
+    //   <ContentItem source="TUNEIN" type="stationurl" location="/v1/playback/station/s24950" sourceAccount="" isPresetable="true">
+    //     <itemName>91.4 Berliner Rundfunk</itemName>
+    //     <containerArt>http://cdn-profiles.tunein.com/s24950/images/logoq.jpg?t=160315</containerArt>
+    //   </ContentItem>
+    //   <track>Berliner Rundfunk</track>
+    //   <artist>Berliner Rundfunk 91.4 - Die besten Hits aller Zeiten</artist>
+    //   <album></album>
+    //   <stationName>Berliner Rundfunk</stationName>
+    //   <art artImageStatus="IMAGE_PRESENT">http://cdn-profiles.tunein.com/s24950/images/logog.jpg?t=637387494910000000</art>
+    //   <favoriteEnabled />
+    //   <playStatus>BUFFERING_STATE</playStatus>
+    //   <streamType>RADIO_STREAMING</streamType>
+    // </nowPlaying>
   }
 
   /**
@@ -176,19 +269,19 @@ namespace soundtouch
   bool SoundTouchXMLParser::setVolumeMessageSubPropertys( SoundTouchUpdateTmpl *ptr, String &elemName, String &attrVal )
   {
     //
-    // polymorph class, confert pointer
+    // polymorph class, convert pointer
     //
     SoundTouchVolume *dev = static_cast< SoundTouchVolume * >( ptr );
     //
-    if ( elemName.equals( UPDATE_PROPERTY_TARGETVOL ) )
+    if ( elemName.equals( UPDATE_PROPERTY_VOL_TARGET ) )
     {
       dev->targetVol = static_cast< uint8_t >( attrVal.toInt() & 0xff );
     }
-    else if ( elemName.equals( UPDATE_PROPERTY_CURRVOL ) )
+    else if ( elemName.equals( UPDATE_PROPERTY_VOL_CURR ) )
     {
       dev->currVol = static_cast< uint8_t >( attrVal.toInt() & 0xff );
     }
-    else if ( elemName.equals( UPDATE_PROPERTY_MUTEVOL ) )
+    else if ( elemName.equals( UPDATE_PROPERTY_VOL_MUTE ) )
     {
       dev->currVol = attrVal.equals( "true" ) ? true : false;
     }
@@ -250,4 +343,44 @@ namespace soundtouch
     return WS_UNKNOWN;
   }
 
+  /**
+   * get status of buffering
+   */
+  WsPlayStatus SoundTouchXMLParser::getPlayingType( String &_state )
+  {
+    if ( _state.equals( UPDATE_PROPERTY_NPLAY_PLAYSTATE_PLAY ) )
+    {
+      return PLAY_STATE;
+    }
+    else if ( _state.equals( UPDATE_PROPERTY_NPLAY_PLAYSTATE_PAUSE ) )
+    {
+      return PAUSE_STATE;
+    }
+    else if ( _state.equals( UPDATE_PROPERTY_NPLAY_PLAYSTATE_STOP ) )
+    {
+      return STOP_STATE;
+    }
+    else if ( _state.equals( UPDATE_PROPERTY_NPLAY_PLAYSTATE_BUFFER ) )
+    {
+      return BUFFERING_STATE;
+    }
+    return INVALID_PLAY_STATUS;
+  }
+
+  /**
+   * get Stream type (not compete yet)
+   * TODO: all the stream types
+   */
+  WsStreamingTypes SoundTouchXMLParser::getStreamingType( String &_type )
+  {
+    if ( _type.equals( UPDATE_PROPERTY_NPLAY_STREAMTYPE_RADIO ) )
+    {
+      return STREAM_RADIO_STREAMING;
+    }
+    else if ( _type.equals( UPDATE_PROPERTY_NPLAY_STREAMTYPE_ONDEMAND ) )
+    {
+      return STREAM_TRACK_ONDEMAND;
+    }
+    return STREAM_UNKNOWN;
+  }
 }  // namespace soundtouch

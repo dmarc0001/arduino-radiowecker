@@ -22,6 +22,9 @@ namespace soundtouch
     private:
     WsMsgType getMessageType( String & );
     WsMsgUpdateType getUpdateType( String & );
-    bool setVolumeMessageSubPropertys(SoundTouchUpdateTmpl *, String& , String&);
+    WsPlayStatus getPlayingType( String & );
+    WsStreamingTypes getStreamingType( String & );
+    bool setVolumeMessageSubPropertys( SoundTouchUpdateTmpl *, String &, String & );
+    bool setNowPlayingMessageSubPropertys( SoundTouchUpdateTmpl *, String &, String & );
   };
 }  // namespace soundtouch

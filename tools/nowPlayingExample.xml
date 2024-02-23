@@ -1,0 +1,18 @@
+<updates deviceID="689E19653E96">
+  <nowPlayingUpdated>
+    <nowPlaying deviceID="689E19653E96" source="TUNEIN" sourceAccount="">
+      <ContentItem source="TUNEIN" type="stationurl" location="/v1/playback/station/s24950" sourceAccount="" isPresetable="true">
+        <itemName>91.4 Berliner Rundfunk</itemName>
+        <containerArt>http://cdn-profiles.tunein.com/s24950/images/logoq.jpg?t=160315</containerArt>
+      </ContentItem>
+      <track>Berliner Rundfunk</track>
+      <artist>Berliner Rundfunk 91.4 - Die besten Hits aller Zeiten</artist>
+      <album></album>
+      <stationName>Berliner Rundfunk</stationName>
+      <art artImageStatus="IMAGE_PRESENT">http://cdn-profiles.tunein.com/s24950/images/logog.jpg?t=637387494910000000</art>
+      <favoriteEnabled />
+      <playStatus>BUFFERING_STATE</playStatus>
+      <streamType>RADIO_STREAMING</streamType>
+    </nowPlaying>
+  </nowPlayingUpdated>
+</updates>
