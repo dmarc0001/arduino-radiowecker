@@ -192,7 +192,7 @@ namespace soundtouch
 
   void SoundTouchDevice::onDecodetMessage( SoundTouchUpdateTmplPtr ptr )
   {
-    elog.log( DEBUG, "%s: rec decodet msg, type %d", SoundTouchDevice::tag, ptr->msgType );
+    elog.log( DEBUG, "%s: rec decodet msg, type %d", SoundTouchDevice::tag, ptr->getUpdateType() );
     // TODO: implement
   }
 

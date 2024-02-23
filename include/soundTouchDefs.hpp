@@ -25,6 +25,9 @@ namespace soundtouch
   constexpr const char *UPDATE_PROPERTY_CURRVOL{ "actualvolume" };             //! current volume of device
   constexpr const char *UPDATE_PROPERTY_MUTEVOL{ "muteenabled" };              //! is device muted
 
+  /**
+   * defines which kind of ws message we have
+   */
   enum WsMsgType : uint8_t
   {
     WS_USER_ACTIVITY_UPDATES,  //! user has changes made
@@ -32,6 +35,9 @@ namespace soundtouch
     WS_UNKNOWN                 //! unknown type
   };
 
+  /**
+   * which update (WS_UPDATES)
+   */
   enum WsMsgUpdateType : uint8_t
   {
     MSG_UPDATE_VOLUME,               // volumeUpdated
@@ -50,13 +56,49 @@ namespace soundtouch
     MSG_UNKNOWN
   };
 
-  class SoundTouchUpdateTmpl
+  /**
+   * playstati for soundtouch device
+   */
+  enum WsPlayStatus : uint8_t
   {
-    public:
-    WsMsgUpdateType msgType{ MSG_UNKNOWN };  //! user act or update
-    bool isValid{ false };                   //! have to set valid
+    PLAY_STATE,
+    PAUSE_STATE,
+    STOP_STATE,
+    BUFFERING_STATE,
+    INVALID_PLAY_STATUS
   };
 
+  /**
+   * substruct for play item
+   */
+  struct SoundTouchContentItem
+  {
+    String itemName;
+    String source;
+    String location;
+    String sourceAccount;
+    bool isPresetable;
+  };
+
+  /**
+   * base class for polymorph classes to use teh same typed poiuntzrer for all subclasses
+   */
+  class SoundTouchUpdateTmpl
+  {
+    protected:
+    WsMsgUpdateType msgType{ MSG_UNKNOWN };  //! user act or update
+
+    public:
+    bool isValid{ false };  //! have to set valid
+    WsMsgUpdateType getUpdateType()
+    {
+      return msgType;
+    };
+  };
+
+  /**
+   * class for websocket msg volume updates
+   */
   class SoundTouchVolume : public SoundTouchUpdateTmpl
   {
     public:
@@ -65,13 +107,50 @@ namespace soundtouch
     bool mute{ false };        //! mute device
     SoundTouchVolume()
     {
+      // make the right type
       this->msgType = MSG_UPDATE_VOLUME;
     };
   };
 
-  using SoundTouchUpdateTmplPtr = std::shared_ptr< SoundTouchUpdateTmpl >;
-  using SoundTouchVolumePtr = std::shared_ptr< SoundTouchVolume >;
+  /**
+   * class for websocket msg now playing updates
+   */
+  class SoundTouchNowPlayingUpdate : public SoundTouchUpdateTmpl
+  {
+    public:
+    SoundTouchContentItem contenItem;
+    String track;
+    String artist;
+    String album;
+    String stationName;
+    String art;
+    // String artImageStatus;
+    WsPlayStatus playStatus;
+    String description;
+    String stationLocation;
+    String nowPlaying;
+    //
+    SoundTouchNowPlayingUpdate()
+    {
+      // make the right type
+      this->msgType = MSG_UPDATE_NOW_PLAYING_CHANGED;
+    };
+  };
 
+  //
+  // base class for polymorph classes
+  //
+  using SoundTouchUpdateTmplPtr = std::shared_ptr< SoundTouchUpdateTmpl >;
+
+  //
+  // makes memory education easy
+  //
+  using SoundTouchVolumePtr = std::shared_ptr< SoundTouchVolume >;
+  using SoundTouchNowPlayingUpdatePtr = std::shared_ptr< SoundTouchNowPlayingUpdate >;
+
+  //
+  // easyer for semantic
+  //
   using XmlMessageList = std::vector< String >;
   using DecodetMessageList = std::vector< SoundTouchUpdateTmplPtr >;
 

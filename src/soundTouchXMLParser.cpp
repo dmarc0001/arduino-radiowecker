@@ -105,7 +105,7 @@ namespace soundtouch
               elog.log( DEBUG, "%s: update property <%s>...", SoundTouchXMLParser::tag, elemName.c_str() );
               break;
             case 3:
-              if ( updatePtr->msgType == MSG_UPDATE_VOLUME )
+              if ( updatePtr->getUpdateType() == MSG_UPDATE_VOLUME )
               {
                 elog.log( DEBUG, "%s: property.sub <%s>...", SoundTouchXMLParser::tag, elemName.c_str() );
                 setVolumeMessageSubPropertys( updatePtr, elemName, attrVal );
