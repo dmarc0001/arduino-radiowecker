@@ -87,6 +87,9 @@ std::shared_ptr< soundtouch::SoundTouchDevice > doTestThingsIfOnline()
   device.note = String( "bemerkung" );
 
   std::shared_ptr< SoundTouchDevice > testDev = std::make_shared< SoundTouchDevice >( device );
+  sleep( 2 );
+  testDev->getDeviceInfos();
+
   return testDev;
 }
 

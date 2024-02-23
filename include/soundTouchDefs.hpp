@@ -42,8 +42,10 @@ namespace soundtouch
   constexpr const char *UPDATE_PROPERTY_NPLAY_PLAYSTATE_INVALIDPLAY{ "INVALID_PLAY_STATE" };  //! playstate
   constexpr const char *UPDATE_PROPERTY_NPLAY_STREAMTYPE_RADIO{ "RADIO_STREAMING" };          //! streamtype
   constexpr const char *UPDATE_PROPERTY_NPLAY_STREAMTYPE_ONDEMAND{ "TRACK_ONDEMAND" };        //! streamtype
-  constexpr const char *UPDATE_PROPERTY_ZONE_ZONE{ "zone" };
-  constexpr const char *UPDATE_PROPERTY_ZONE_ATTRIB_MASTER{ "master" };
+  constexpr const char *UPDATE_PROPERTY_ZONE_ZONE{ "zone" };                                  //! zoneinfo level2 tag
+  constexpr const char *UPDATE_PROPERTY_ZONE_ATTRIB_MASTER{ "master" };                       // attrib for zone -> master
+  constexpr const char *WEB_GET_NOW_PLAYINGZONE{ "/nowPlaying" };                             //! get nowPlaying
+  constexpr const char *WEB_GET_ZONE{ "/getZone" };                                           //! get zone question
 
   /**
    * defines which kind of ws message we have

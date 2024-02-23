@@ -25,6 +25,7 @@ namespace soundtouch
     InstancePtr myInstance = std::make_pair( this->instance, this );
     SoundTouchDevice::instList.push_back( myInstance );
     elog.log( INFO, "%s: create Instance: %d", SoundTouchDevice::tag, this->instance );
+    http.setReuse( true );  /// keep-alive
     //
     // make callbacks
     // run callback when messages are received
@@ -84,6 +85,139 @@ namespace soundtouch
         break;
       }
     }
+  }
+
+  /**
+   * send questions to devive for current status
+   * (power state, playstate, volume et)
+   */
+  bool SoundTouchDevice::getDeviceInfos()
+  {
+    if ( askForZones() )
+    {
+      delay( 500 );
+      if ( askForNowPlaying() )
+      {
+        // TODO: implement
+      }
+    }
+
+    http.end();
+    return false;
+  }
+
+  bool SoundTouchDevice::askForNowPlaying()
+  {
+    String questionString;
+    bool wasOk{ false };
+
+    questionString = "http://";
+    questionString += device.addr.toString();
+    questionString += ":";
+    questionString += device.webPort;
+    questionString += WEB_GET_NOW_PLAYINGZONE;
+
+    elog.log( DEBUG, "%s: ask for nowPlaying...(%s)", SoundTouchDevice::tag, questionString.c_str() );
+    // prepare http
+    // http.begin( tcpClient, questionString );
+    http.begin( questionString );
+    // make question
+    int httpResponseCode = http.GET();
+    delay( 80 );
+    if ( httpResponseCode > 0 )
+    {
+      wasOk = true;
+      // elog.log( DEBUG, "%s: HTTP Response code: %d", SoundTouchDevice::tag, httpResponseCode );
+      String payload = http.getString();
+      // elog.log( DEBUG, "%s: payload <%s>", SoundTouchDevice::tag, payload.c_str() );
+      int idx = payload.indexOf( "?>" );
+      if ( idx > 0 )
+      {
+        //
+        // add header for zone update, so i can using the present code
+        // and than put it in the decoder queue
+        //
+        String msg = "<updates deviceID=\"";
+        msg += device.id;
+        msg += "\">";
+        msg += payload.substring( idx + 2 );
+        msg += "</updates>";
+        // elog.log( DEBUG, "%s: payload <%s>", SoundTouchDevice::tag, msg.c_str() );
+        xmlList.push_back( msg );
+      }
+      // <?xml version="1.0" encoding="UTF-8" ?>
+      //   <nowPlaying deviceID="689E19653E96" source="AUX">
+      //     <ContentItem source="AUX" sourceAccount="AUX" isPresetable="true">
+      //       <itemName>AUX IN</itemName>
+      //     </ContentItem>
+      //     <playStatus>PLAY_STATE</playStatus>
+      //   </nowPlaying>
+    }
+    else
+    {
+      elog.log( ERROR, "%s: HTTP Response code: %d", SoundTouchDevice::tag, httpResponseCode );
+    }
+    // Free resources
+    http.end();
+    return ( wasOk );
+  }
+
+  bool SoundTouchDevice::askForZones()
+  {
+    String questionString;
+    bool wasOk{ false };
+
+    questionString = "http://";
+    questionString += device.addr.toString();
+    questionString += ":";
+    questionString += device.webPort;
+    questionString += WEB_GET_ZONE;
+
+    elog.log( DEBUG, "%s: ask for zones...", SoundTouchDevice::tag );
+    // prepare http
+    // http.begin( tcpClient, questionString );
+    http.begin( questionString );
+    //  make question
+    int httpResponseCode = http.GET();
+    delay( 80 );
+    if ( httpResponseCode > 0 )
+    {
+      wasOk = true;
+      // elog.log( DEBUG, "%s: HTTP Response code: %d", SoundTouchDevice::tag, httpResponseCode );
+      String payload = http.getString();
+      // elog.log( DEBUG, "%s: payload <%s>", SoundTouchDevice::tag, payload.c_str() );
+      int idx = payload.indexOf( "?>" );
+      if ( idx > 0 )
+      {
+        //
+        // add header for zone update, so i can using the present code
+        // and than put it in the decoder queue
+        //
+        String msg = "<updates deviceID=\"";
+        msg += device.id;
+        msg += "\"><zoneUpdated>";
+        msg += payload.substring( idx + 2 );
+        msg += "</zoneUpdated></updates>";
+        // elog.log( DEBUG, "%s: payload <%s>", SoundTouchDevice::tag, msg.c_str() );
+        xmlList.push_back( msg );
+      }
+      // <?xml version="1.0" encoding="UTF-8" ?>
+      // <zone master="689E19653E96">
+      //   <member ipaddress="192.168.1.68">
+      //     689E19653E96
+      //   </member>
+      //   <member ipaddress="192.168.1.39">
+      //     38D2697C128E
+      //   </member>
+      // </zone>
+    }
+    else
+    {
+      elog.log( ERROR, "%s: HTTP Response code: %d", SoundTouchDevice::tag, httpResponseCode );
+    }
+    // Free resources
+    http.end();
+    return ( wasOk );
   }
 
   /**
