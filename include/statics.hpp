@@ -3,8 +3,8 @@
 #include <WiFi.h>
 #include <WiFiUdp.h>
 
+extern logger::Elog elog;
 namespace alarmclock
 {
-  extern logger::Elog elog;
   extern WiFiUDP udpClient;
 }  // namespace alarmclock

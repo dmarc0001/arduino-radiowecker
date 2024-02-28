@@ -13,7 +13,8 @@
 #include "ledStripe.hpp"
 #include "alertConfigFileObj.hpp"
 #include "deviceDiscover.hpp"
-#include "soundtouchDevice.hpp"
+// #include "soundtouchDevice.hpp"
+#include "soundTouchAlert.hpp"
 
 void setup()
 {
@@ -66,13 +67,16 @@ void setup()
   DeviceDiscover::init();
 }
 
-std::shared_ptr< soundtouch::SoundTouchDevice > doTestThingsIfOnline()
+std::shared_ptr< soundtouch::SoundTouchAlert > doTestThingsIfOnline()
 {
   using namespace alarmclock;
   using namespace logger;
   const char *tag{ "test" };
 
-  elog.log( DEBUG, "%s: start soundtouch device...", tag );
+  //
+  // step 1, create and init a soundTouch device
+  //
+  elog.log( DEBUG, "%s: start soundtouch alert with device...", tag );
   using namespace soundtouch;
   using namespace alarmclock;
   DeviceEntry device;
@@ -85,20 +89,25 @@ std::shared_ptr< soundtouch::SoundTouchDevice > doTestThingsIfOnline()
   device.wsPort = 8080;
   device.type = String( "Soundtouch" );
   device.note = String( "bemerkung" );
-
-  std::shared_ptr< SoundTouchDevice > testDev = std::make_shared< SoundTouchDevice >( device );
+  //
+  // create the device object
+  //
+  std::shared_ptr< SoundTouchAlert > testAlert = std::make_shared< SoundTouchAlert >( device );
   sleep( 2 );
-  testDev->getDeviceInfos();
-
-  return testDev;
+  if ( testAlert->init() )
+  {
+    // init was okay
+    return testAlert;
+  }
+  return nullptr;
 }
 
-void doTestThingsIfOffline( std::shared_ptr< soundtouch::SoundTouchDevice > testDev )
+void doTestThingsIfOffline( std::shared_ptr< soundtouch::SoundTouchAlert > testDev )
 {
   using namespace alarmclock;
   using namespace logger;
   const char *tag{ "test" };
-  elog.log( DEBUG, "%s: delete soundtouch device...", tag );
+  elog.log( DEBUG, "%s: delete soundtouch alert...", tag );
   delete testDev.get();
 }
 
@@ -110,7 +119,7 @@ void loop()
   // next time logger time sync
   static unsigned long setNextTimeCorrect{ ( millis() + ( 1000UL * 21600UL ) ) };
   static auto connected = WlanState::DISCONNECTED;
-  static std::shared_ptr< soundtouch::SoundTouchDevice > testDev;
+  static std::shared_ptr< soundtouch::SoundTouchAlert > testAlert;
   //
   // for webserver
   //
@@ -150,14 +159,18 @@ void loop()
         //
         elog.log( INFO, "main: ip connectivity found, start webserver." );
         // TODO: EnvWebServer::start();
-        testDev = doTestThingsIfOnline();
+        testAlert = doTestThingsIfOnline();
+        if ( testAlert )
+        {
+          elog.log( INFO, "main::loop: okay while soundtouch device (get infos)..." );
+        }
       }
       else
       {
         elog.log( WARNING, "main: ip connectivity lost, stop webserver." );
         // TODO: EnvWebServer::stop();
-        doTestThingsIfOffline( testDev );
-        testDev = nullptr;
+        doTestThingsIfOffline( testAlert );
+        testAlert = nullptr;
       }
     }
     else

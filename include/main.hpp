@@ -1,9 +1,9 @@
 #pragma once
 #include <memory>
 #include "deviceDiscover.hpp"
-#include "soundtouchDevice.hpp"
+#include "soundTouchAlert.hpp"
 
 void setup();
 void loop();
-std::shared_ptr< soundtouch::SoundTouchDevice > doTestThingsIfOnline();
-void doTestThingsIfOffline( std::shared_ptr< soundtouch::SoundTouchDevice > );
+std::shared_ptr< soundtouch::SoundTouchAlert > doTestThingsIfOnline();
+void doTestThingsIfOffline( std::shared_ptr< soundtouch::SoundTouchAlert > );

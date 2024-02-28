@@ -21,9 +21,12 @@ namespace soundtouch
   constexpr const char *UPDATE_INFO{ "infoUpdated" };                                 //! device info updated
   constexpr const char *UPDATE_SOFTWARE_STATE{ "swUpdateStatusUpdated" };             //! software status updated
   constexpr const char *UPDATE_SITE_SURVEY_RES{ "siteSurveyResultsUpdated" };         //! ?
+  constexpr const char *UPDATE_PROPERTY_ATTR_DEVICE_ID{ "deviceID" };                 //! attrib device id
+  constexpr const char *UPDATE_PROPERTY_ATTR_SOURCE{ "source" };                      //! attrib source (nowPlaying)
   constexpr const char *UPDATE_PROPERTY_VOL_TARGET{ "targetvolume" };                 //! target to volume device
   constexpr const char *UPDATE_PROPERTY_VOL_CURR{ "actualvolume" };                   //! current volume of device
   constexpr const char *UPDATE_PROPERTY_VOL_MUTE{ "muteenabled" };                    //! is device muted
+  constexpr const char *UPDATE_PROPERTY_NPLAY_NOW_PLAYING{ "nowPlaying" };            //! subitem nowPlaying
   constexpr const char *UPDATE_PROPERTY_NPLAY_CONTENT{ "contenItem" };                //! subitem contentItem
   constexpr const char *UPDATE_PROPERTY_NPLAY_TRACK{ "track" };                       //! which track is playing
   constexpr const char *UPDATE_PROPERTY_NPLAY_ARTIST{ "artist" };                     //! which artist is playing
@@ -46,6 +49,8 @@ namespace soundtouch
   constexpr const char *UPDATE_PROPERTY_ZONE_ATTRIB_MASTER{ "master" };                       // attrib for zone -> master
   constexpr const char *WEB_GET_NOW_PLAYINGZONE{ "/nowPlaying" };                             //! get nowPlaying
   constexpr const char *WEB_GET_ZONE{ "/getZone" };                                           //! get zone question
+  constexpr const char *WEB_GET_VOLUME{ "/volume" };                                          //! get device/zone volume
+  constexpr unsigned long TIMEOUNT_WHILE_DEVICE_INIT{ 5000 };  //! timeout in ms while soundtouch device is timeout
 
   /**
    * defines which kind of ws message we have
@@ -130,6 +135,7 @@ namespace soundtouch
 
     public:
     bool isValid{ false };  //! have to set valid
+    String deviceID;        //! received Device Id
     WsMsgUpdateType getUpdateType()
     {
       return msgType;
@@ -139,13 +145,13 @@ namespace soundtouch
   /**
    * class for websocket msg volume updates
    */
-  class SoundTouchVolume : public SoundTouchUpdateTmpl
+  class SoundTouchVolumeUpdate : public SoundTouchUpdateTmpl
   {
     public:
     uint8_t targetVol{ 255 };  //! volume should set to
     uint8_t currVol{ 255 };    //! current volume
     bool mute{ false };        //! mute device
-    SoundTouchVolume()
+    SoundTouchVolumeUpdate()
     {
       // make the right type
       this->msgType = MSG_UPDATE_VOLUME;
@@ -164,6 +170,7 @@ namespace soundtouch
     String album;
     String stationName;
     String art;
+    String source;
     // attribute : String artImageStatus;
     WsPlayStatus playStatus;
     String description;
@@ -174,6 +181,7 @@ namespace soundtouch
       // make the right type
       this->msgType = MSG_UPDATE_NOW_PLAYING_CHANGED;
     };
+
     // <nowPlaying deviceID="689E19653E96" source="TUNEIN" sourceAccount="">
     //   <ContentItem source="TUNEIN" type="stationurl" location="/v1/playback/station/s24950" sourceAccount="" isPresetable="true">
     //     <itemName>91.4 Berliner Rundfunk</itemName>
@@ -188,6 +196,14 @@ namespace soundtouch
     //   <playStatus>BUFFERING_STATE</playStatus>
     //   <streamType>RADIO_STREAMING</streamType>
     // </nowPlaying>
+
+    // <updates deviceID="689E19653E96">
+    //   <nowPlayingUpdated>
+    //     <nowPlaying deviceID="689E19653E96" source="STANDBY">
+    //       <ContentItem source="STANDBY" isPresetable="false" />
+    //     </nowPlaying>
+    //   </nowPlayingUpdated>
+    // </updates>
   };
 
   /**
@@ -215,7 +231,44 @@ namespace soundtouch
     //     </zone>
     //   </zoneUpdated>
     // </updates>
+
+    // TODO: what if this devivce is zone member?
+    // <updates deviceID="689E19653E96">
+    //   <zoneUpdated>
+    //     <zone master="F45EABFBCD9A" senderIPAddress="192.168.1.20" senderIsMaster="true">
+    //       <member ipaddress="192.168.1.68">
+    //         689E19653E96
+    //       </member>
+    //     </zone>
+    //   </zoneUpdated>
+    // </updates>
   };
+
+  class SoundTouchDeviceState
+  {
+    public:
+    String deviceID;
+    SoundTouchVolumeUpdate currVolume;
+    WsPlayStatus currentPlayState;
+    String masterID;  //! if MasterID => its zone Master
+    std::vector< SoundTouchZoneMember > members;
+    SoundTouchContentItem playItem;
+    WsPlayStatus playStatus;
+    struct
+    {
+      bool isVolume;
+      bool isPlaying;
+      bool isZone;
+    } stateChecked;
+    SoundTouchDeviceState()
+    {
+      stateChecked.isVolume = false;
+      stateChecked.isPlaying = false;
+      stateChecked.isZone = false;
+      masterID.clear();
+    }
+  };
+
   //
   // base class for polymorph classes
   //
@@ -224,7 +277,7 @@ namespace soundtouch
   //
   // makes memory education easy
   //
-  using SoundTouchVolumePtr = std::shared_ptr< SoundTouchVolume >;
+  using SoundTouchVolumePtr = std::shared_ptr< SoundTouchVolumeUpdate >;
   using SoundTouchNowPlayingUpdatePtr = std::shared_ptr< SoundTouchNowPlayingUpdate >;
   using SoundTouchZoneUpdatePtr = std::shared_ptr< SoundTouchZoneUpdate >;
 
