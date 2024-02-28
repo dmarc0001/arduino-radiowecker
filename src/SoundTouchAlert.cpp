@@ -19,7 +19,7 @@ namespace soundtouch
     elog.log( DEBUG, "%s: delete soundtouch alert instance", SoundTouchAlert::tag );
   }
 
-  bool SoundTouchAlert::init( unsigned long timeout )
+  bool SoundTouchAlert::init( uint64_t timeout )
   {
     if ( sdDevice->getDeviceInfos() )
     {
@@ -27,8 +27,8 @@ namespace soundtouch
       //
       // step 2 wait while init the device
       //
-      auto endTimeout = millis() + timeout;
-      while ( ST_STATE_INIT_ALERT != sdDevice->getDeviceRunningState() && endTimeout > millis() )
+      auto endTimeout = esp_timer_get_time() + timeout;
+      while ( ST_STATE_INIT_ALERT != sdDevice->getDeviceRunningState() && endTimeout > esp_timer_get_time() )
       {
         delay( 50 );
       }

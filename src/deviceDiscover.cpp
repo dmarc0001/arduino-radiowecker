@@ -7,10 +7,10 @@ namespace soundtouch
   using namespace logger;
   using namespace alarmclock;
 
-  constexpr uint32_t NEXT_TIME_MDNS_SHORT = 4000UL;
-  constexpr uint32_t NEXT_TIME_MDNS = 17000UL;
-  constexpr uint32_t NEXT_TIME_DISCOVER_SHORT = 2500UL;
-  constexpr uint32_t NEXT_TIME_DISCOVER = 350000UL;
+  constexpr uint64_t NEXT_TIME_MDNS_SHORT = 4000UL;
+  constexpr uint64_t NEXT_TIME_MDNS = 17000UL;
+  constexpr uint64_t NEXT_TIME_DISCOVER_SHORT = 2500UL;
+  constexpr uint64_t NEXT_TIME_DISCOVER = 350000UL;
 
   const char *DeviceDiscover::tag{ "devdiscover" };
   bool DeviceDiscover::isInit{ false };
@@ -37,8 +37,8 @@ namespace soundtouch
    */
   void DeviceDiscover::discoverTask( void * )
   {
-    static unsigned long nextTimeDiscover{ ( millis() + NEXT_TIME_DISCOVER_SHORT ) };
-    static unsigned long nextTimeMDNSCheck{ ( millis() + NEXT_TIME_MDNS_SHORT ) };
+    static uint64_t nextTimeDiscover{ ( esp_timer_get_time() + NEXT_TIME_DISCOVER_SHORT ) };
+    static uint64_t nextTimeMDNSCheck{ ( esp_timer_get_time() + NEXT_TIME_MDNS_SHORT ) };
     static WlanState oldConnectionState{ WlanState::DISCONNECTED };
     //
     // forever
@@ -49,7 +49,7 @@ namespace soundtouch
       //
       // mDNS state checking
       //
-      if ( millis() > nextTimeMDNSCheck )
+      if ( esp_timer_get_time() > nextTimeMDNSCheck )
       {
         //
         // at first, has state changed?
@@ -66,7 +66,7 @@ namespace soundtouch
             if ( !DeviceDiscover::mdnsIsRunning )
             {
               DeviceDiscover::startMDNS();
-              nextTimeDiscover = millis() + NEXT_TIME_DISCOVER_SHORT;
+              nextTimeDiscover = esp_timer_get_time() + NEXT_TIME_DISCOVER_SHORT;
             }
           }
           else if ( newConnectionState == WlanState::DISCONNECTED || newConnectionState == WlanState::FAILED )
@@ -76,13 +76,13 @@ namespace soundtouch
           }
           oldConnectionState = newConnectionState;
         }
-        nextTimeMDNSCheck = millis() + NEXT_TIME_MDNS;
+        nextTimeMDNSCheck = esp_timer_get_time() + NEXT_TIME_MDNS;
       }
 
       //
       // checking if device discovering is current
       //
-      if ( millis() < nextTimeDiscover )
+      if ( esp_timer_get_time() < nextTimeDiscover )
       {
         // wait loop for next discovering or mDNS check
         delay( 103 );
@@ -92,7 +92,7 @@ namespace soundtouch
       // ok discover the devices
       // a little entrophy please
       //
-      nextTimeDiscover = millis() + static_cast< unsigned long >( random( NEXT_TIME_DISCOVER, NEXT_TIME_DISCOVER + 1500UL ) );
+      nextTimeDiscover = esp_timer_get_time() + static_cast< uint64_t >( random( NEXT_TIME_DISCOVER, NEXT_TIME_DISCOVER + 1500UL ) );
       if ( DeviceDiscover::mdnsIsRunning )
       {
         elog.log( DEBUG, "%s: start devices search...", DeviceDiscover::tag );

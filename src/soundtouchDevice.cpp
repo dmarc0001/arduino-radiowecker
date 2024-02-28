@@ -481,13 +481,13 @@ namespace soundtouch
    */
   void SoundTouchDevice::wsTask( void * )
   {
-    static unsigned long nextPing{ millis() + 8000UL };
+    static uint64_t nextPing{ esp_timer_get_time() + 8000UL };
     bool timeToPing{ false };
 
-    nextPing = millis() + 8000UL;
+    nextPing = esp_timer_get_time() + 8000UL;
     while ( true )
     {
-      timeToPing = ( millis() > nextPing );
+      timeToPing = ( esp_timer_get_time() > nextPing );
       for ( auto elem : SoundTouchDevice::instList )
       {
         if ( timeToPing )
@@ -498,7 +498,7 @@ namespace soundtouch
         elem.second->wsClient.poll();
       }
       if ( timeToPing )
-        nextPing = millis() + 17000UL + static_cast< unsigned long >( random( 1000 ) );
+        nextPing = esp_timer_get_time() + 17000UL + static_cast< uint64_t >( random( 1000 ) );
       delay( 10 );
     }
   }

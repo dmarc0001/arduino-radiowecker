@@ -22,6 +22,6 @@ namespace soundtouch
     public:
     explicit SoundTouchAlert( alarmclock::DeviceEntry & );
     ~SoundTouchAlert();
-    bool init(unsigned long timeout = TIMEOUNT_WHILE_DEVICE_INIT);
+    bool init(uint64_t timeout = TIMEOUNT_WHILE_DEVICE_INIT);
   };
 }  // namespace soundtouch

@@ -117,20 +117,20 @@ void loop()
   using namespace logger;
 
   // next time logger time sync
-  static unsigned long setNextTimeCorrect{ ( millis() + ( 1000UL * 21600UL ) ) };
+  static uint64_t setNextTimeCorrect{ ( esp_timer_get_time() + ( 1000UL * 21600UL ) ) };
   static auto connected = WlanState::DISCONNECTED;
   static std::shared_ptr< soundtouch::SoundTouchAlert > testAlert;
   //
   // for webserver
   //
   // EnvServer::WifiConfig::wm.process();
-  if ( setNextTimeCorrect < millis() )
+  if ( setNextTimeCorrect < esp_timer_get_time() )
   {
     //
     // somtimes correct elog time
     //
     elog.log( DEBUG, "main: logger time correction..." );
-    setNextTimeCorrect = ( millis() * 1000UL * 21600UL );
+    setNextTimeCorrect = ( esp_timer_get_time() * 1000UL * 21600UL );
     struct tm ti;
     if ( !getLocalTime( &ti ) )
     {

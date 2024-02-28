@@ -25,7 +25,7 @@ namespace alarmclock
   CRGB LEDStripe::wlan_fail_col{ appprefs::LED_COLOR_WLAN_FAIL };
   CRGB LEDStripe::http_active{ appprefs::LED_COLOR_HTTP_ACTIVE };
 
-  const char *LEDStripe::tag{ "LEDStripe" };
+  const char *LEDStripe::tag{ "ledstripe" };
   TaskHandle_t LEDStripe::taskHandle{ nullptr };
   CRGB LEDStripe::leds[ appprefs::LED_STRIPE_COUNT ]{};
   CRGB LEDStripe::shadow_leds[ appprefs::LED_STRIPE_COUNT ]{};
