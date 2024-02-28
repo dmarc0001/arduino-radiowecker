@@ -10,130 +10,168 @@ namespace soundtouch
 
   const char *SoundTouchXMLParser::tag{ "xmlparser" };
 
+  /**
+   * constructor, set some propertys
+   */
   SoundTouchXMLParser::SoundTouchXMLParser( XmlMessageList &_xmlList, DecodetMessageList &_msgList )
       : xmlList( _xmlList ), msgList( _msgList )
   {
     elog.log( logger::INFO, "%s: soundtouch xml parser create...", SoundTouchXMLParser::tag );
+    vSemaphoreCreateBinary( parseSem );
+    xSemaphoreGive( parseSem );
   }
 
+  /**
+   * destructor, clean up
+   */
   SoundTouchXMLParser::~SoundTouchXMLParser()
   {
     elog.log( logger::DEBUG, "%s: soundtouch xml parser delete...", SoundTouchXMLParser::tag );
   }
 
+  /**
+   * decode message, runs from a setparate task, be arare then this runs single
+   */
   bool SoundTouchXMLParser::decodeMessage()
   {
+    SoundTouchXmlLoopParams params;
     if ( xmlList.empty() )
       return true;
     //
-    // get the message string
-    //
-    String msg = std::move( xmlList.front() );
-    xmlList.erase( xmlList.begin() );
-    // #ifdef BUILD_DEBUG
-    //     delay( 50 );
-    //     elog.log( DEBUG, "%s: decode xml message \"%s\"...", SoundTouchXMLParser::tag, msg.c_str() );
-    //     delay( 250 );
-    // #endif
-    //
-    // first init xml resources
-    // 1+10*(stringlen+1)+(50+1)
-    //
-    size_t msglen = msg.length();
-    size_t bufflen = 10 * ( msglen + 1 ) + 52;
-    yxml_t *x = static_cast< yxml_t * >( malloc( sizeof( yxml_t ) + bufflen ) );
-    if ( !x )
+    // if semaphore free, process, if not try it at neyt round
+    if ( xSemaphoreTake( parseSem, pdMS_TO_TICKS( 10 ) ) == pdTRUE )
     {
-      elog.log( ERROR, "%s: can't allocate %d bytes für xml processing...", SoundTouchXMLParser::tag, bufflen );
-      return false;
-    }
-    yxml_init( x, x + 1, bufflen );
-    //
-    // parsing message
-    //
-    elog.log( DEBUG, "%s: parse xml message...", SoundTouchXMLParser::tag );
-    ///* The XML document as a zero-terminated string
-    SoundTouchXmlLoopParams params;
-    const char *doc = msg.c_str();
-    for ( ; *doc; doc++ )
-    {
-      yxml_ret_t r = yxml_parse( x, *doc );
-      // result is.....
-      switch ( r )
+      //
+      // get the message string
+      //
+      String msg = std::move( xmlList.front() );
+      xmlList.erase( xmlList.begin() );
+      // #ifdef BUILD_DEBUG
+      //     delay( 50 );
+      //     elog.log( DEBUG, "%s: decode xml message \"%s\"...", SoundTouchXMLParser::tag, msg.c_str() );
+      //     delay( 250 );
+      // #endif
+      //
+      // first init xml resources
+      // 1+10*(stringlen+1)+(50+1)
+      //
+      size_t msglen = msg.length();
+      size_t bufflen = 10 * ( msglen + 1 ) + 52;
+      yxml_t *x = static_cast< yxml_t * >( malloc( sizeof( yxml_t ) + bufflen ) );
+      if ( !x )
       {
-        case YXML_EEOF:    // Unexpected EOF
-        case YXML_EREF:    // Invalid character or entity reference (&whatever;)
-        case YXML_ECLOSE:  // Close tag does not match open tag (<Tag> .. </OtherTag>)
-        case YXML_ESTACK:  // Stack overflow (too deeply nested tags or too long element/attribute name)
-        case YXML_ESYN:    // Syntax error (unexpected byte)
-          // an error
-          params.isError = true;
-          elog.log( ERROR, "%s: can't parse xml..", SoundTouchXMLParser::tag );
-          break;
-        case YXML_OK:  // Character consumed, no new token present
-          break;
-        case YXML_ELEMSTART:
-          // element start
-          params.elemName = std::move( String( x->elem ) );
-          computeElemStart( params );
-          ++params.depth;
-          break;
-        case YXML_CONTENT:
-          // content add
-          params.attrVal += std::move( String( x->data ) );
-          break;
-        case YXML_ELEMEND:
-          // element ends here
-          --params.depth;
-          computeElemEnd( params );
-          params.elemName.clear();
-          params.attrVal.clear();
-          // element endet
-          break;
-        case YXML_ATTRSTART:
-          // init attribute string
-          params.attrName.clear();
-          break;
-        case YXML_ATTRVAL:
-          // append to attribute string
-          params.attrVal += std::move( String( x->data ) );
-          break;
-        case YXML_ATTREND:
-          params.attrName = std::move( String( x->attr ) );
-          //
-          // Now we have a full attribute. Its name is in x->attr, and its value is
-          // in the string 'attrVal'
-          //
-          computeAttrEnd( params );
-          params.attrVal.clear();
-          break;
-        case YXML_PISTART: /* Start of a processing instruction          */
-          params.piVal.clear();
-        case YXML_PICONTENT: /* Content of a PI                            */
-          params.piVal += String( x->pi );
-        case YXML_PIEND: /* End of a processing instruction            */
-          elog.log( DEBUG, "%s: <level %d> pi \"%s\" = \"%s\"", SoundTouchXMLParser::tag, params.depth, params.elemName.c_str(),
-                    params.attrVal.c_str() );
-        default:
-          break;
+        elog.log( ERROR, "%s: can't allocate %d bytes für xml processing...", SoundTouchXMLParser::tag, bufflen );
+        xSemaphoreGive( parseSem );
+        return false;
       }
-      if ( params.isError )
-        break;
-
-      /* Handle any tokens we are interested in */
-    }
-    if ( !params.isError )
-      elog.log( DEBUG, "%s: parse xml message...DONE", SoundTouchXMLParser::tag );
-
-    // DO NOT FORGET!!!!!!
-    free( x );
-    if ( params.updatePtr )
-      if ( params.updatePtr->isValid )
+      yxml_init( x, x + 1, bufflen );
+      //
+      // parsing message
+      //
+      elog.log( DEBUG, "%s: parse xml message...", SoundTouchXMLParser::tag );
+      ///* The XML document as a zero-terminated string
+      const char *doc = msg.c_str();
+      for ( ; *doc; doc++ )
       {
-        SoundTouchUpdateTmplPtr savePtr( std::move( params.updatePtr ) );
-        params.updatePtr = nullptr;
-        msgList.push_back( savePtr );
+        yxml_ret_t r = yxml_parse( x, *doc );
+        // result is.....
+        switch ( r )
+        {
+          case YXML_EEOF:    // Unexpected EOF
+          case YXML_EREF:    // Invalid character or entity reference (&whatever;)
+          case YXML_ECLOSE:  // Close tag does not match open tag (<Tag> .. </OtherTag>)
+          case YXML_ESTACK:  // Stack overflow (too deeply nested tags or too long element/attribute name)
+          case YXML_ESYN:    // Syntax error (unexpected byte)
+            // an error
+            params.isError = true;
+            elog.log( ERROR, "%s: can't parse xml..", SoundTouchXMLParser::tag );
+            break;
+          case YXML_OK:  // Character consumed, no new token present
+            break;
+          case YXML_ELEMSTART:
+            // element start
+            params.elemName = std::move( String( x->elem ) );
+            computeElemStart( params );
+            ++params.depth;
+            break;
+          case YXML_CONTENT:
+            // content add
+            params.attrVal += std::move( String( x->data ) );
+            break;
+          case YXML_ELEMEND:
+            // element ends here
+            --params.depth;
+            computeElemEnd( params );
+            params.elemName.clear();
+            params.attrVal.clear();
+            // element endet
+            break;
+          case YXML_ATTRSTART:
+            // init attribute string
+            params.attrName.clear();
+            break;
+          case YXML_ATTRVAL:
+            // append to attribute string
+            params.attrVal += std::move( String( x->data ) );
+            break;
+          case YXML_ATTREND:
+            params.attrName = std::move( String( x->attr ) );
+            //
+            // Now we have a full attribute. Its name is in x->attr, and its value is
+            // in the string 'attrVal'
+            //
+            computeAttrEnd( params );
+            params.attrVal.clear();
+            break;
+          case YXML_PISTART: /* Start of a processing instruction          */
+            params.piVal.clear();
+          case YXML_PICONTENT: /* Content of a PI                            */
+            params.piVal += String( x->pi );
+          case YXML_PIEND: /* End of a processing instruction            */
+            elog.log( DEBUG, "%s: <level %d> pi \"%s\" = \"%s\"", SoundTouchXMLParser::tag, params.depth, params.elemName.c_str(),
+                      params.attrVal.c_str() );
+          default:
+            break;
+        }
+        if ( params.isError )
+          break;
+
+        /* Handle any tokens we are interested in */
       }
+      if ( !params.isError )
+      {
+        elog.log( DEBUG, "%s: parse xml message...DONE", SoundTouchXMLParser::tag );
+      }
+      else
+      {
+        elog.log( ERROR, "%s: parse xml message...UNDONE", SoundTouchXMLParser::tag );
+      }
+      // DO NOT FORGET!!!!!!
+      free( x );
+      if ( params.updatePtr )
+      {
+        if ( params.updatePtr->isValid )
+        {
+          elog.log( DEBUG, "%s: decoded message to queue!", SoundTouchXMLParser::tag );
+          if ( params.updatePtr->deviceID.isEmpty() )
+          {
+            params.updatePtr->deviceID = params.deviceID;
+          }
+          SoundTouchUpdateTmplPtr savePtr( std::move( params.updatePtr ) );
+          msgList.push_back( savePtr );
+          params.updatePtr = nullptr;
+        }
+        else
+        {
+          elog.log( DEBUG, "%s: decoded message not valid!", SoundTouchXMLParser::tag );
+        }
+      }
+      else
+      {
+        elog.log( ERROR, "%s: no decoded object created!", SoundTouchXMLParser::tag );
+      }
+    }
+    xSemaphoreGive( parseSem );
     return !params.isError;
   }
 
@@ -164,7 +202,7 @@ namespace soundtouch
               // make an object for volume
               if ( p.updatePtr )
                 free( p.updatePtr );
-              p.updatePtr = new SoundTouchVolume();
+              p.updatePtr = new SoundTouchVolumeUpdate();
               break;
             case MSG_UPDATE_NOW_PLAYING_CHANGED:
               // make an object for nowPlayingUpdate
@@ -198,6 +236,7 @@ namespace soundtouch
           {
             case MSG_UPDATE_ZONE:
               elog.log( DEBUG, "%s: <level 2> await attribute for zone master...", SoundTouchXMLParser::tag );
+              p.updatePtr->isValid = true;
               // await attribute ipaddr
               break;
             default:
@@ -222,6 +261,7 @@ namespace soundtouch
               if ( p.zoneMember )
                 free( p.zoneMember );
               p.zoneMember = new SoundTouchZoneMember;
+              p.updatePtr->isValid = true;
               break;
             default:
               if ( p.updatePtr )
@@ -256,19 +296,19 @@ namespace soundtouch
               // zone member is an attribute
               elog.log( DEBUG, "%s: <level 3> content  \"%s\" = \"%s\"...", SoundTouchXMLParser::tag, p.elemName.c_str(),
                         p.attrVal.c_str() );
+              //
+              // fill in in message
+              //
               if ( p.zoneMember )
               {
-                //
-                // fill in in message
-                //
                 p.zoneMember->id = p.attrVal;
-                SoundTouchZoneUpdate *dev = static_cast< SoundTouchZoneUpdate * >( p.updatePtr );
-                dev->members.push_back( *( p.zoneMember ) );
-                dev->isValid = true;
-                free( p.zoneMember );
-                p.zoneMember = nullptr;
-                //elog.log( DEBUG, "%s: zonemembers: %d", SoundTouchXMLParser::tag, dev->members.size() );
+                static_cast< SoundTouchZoneUpdate * >( p.updatePtr )->members.push_back( *( std::move( p.zoneMember ) ) );
               }
+              static_cast< SoundTouchZoneUpdate * >( p.updatePtr )->isValid = true;
+              free( p.zoneMember );
+              p.zoneMember = nullptr;
+              elog.log( DEBUG, "%s: zonemembers: %d", SoundTouchXMLParser::tag,
+                        static_cast< SoundTouchZoneUpdate * >( p.updatePtr )->members.size() );
               break;
             default:
               break;
@@ -289,6 +329,10 @@ namespace soundtouch
       case 0:
         elog.log( DEBUG, "%s: <root> attrib \"%s/%s\" = \"%s\"", SoundTouchXMLParser::tag, p.elemName.c_str(), p.attrName.c_str(),
                   p.attrVal.c_str() );
+        if ( p.attrName.equals( UPDATE_PROPERTY_ATTR_DEVICE_ID ) )
+        {
+          p.deviceID = p.attrVal;
+        }
         break;
       case 2:
         if ( p.updatePtr )
@@ -298,10 +342,19 @@ namespace soundtouch
           //
           if ( p.elemName.equals( UPDATE_PROPERTY_ZONE_ZONE ) && p.attrName.equals( UPDATE_PROPERTY_ZONE_ATTRIB_MASTER ) )
           {
-            SoundTouchZoneUpdate *dev = static_cast< SoundTouchZoneUpdate * >( p.updatePtr );
-            dev->masterID = p.attrVal;
+            static_cast< SoundTouchZoneUpdate * >( p.updatePtr )->masterID = p.attrVal;
             elog.log( DEBUG, "%s: <level 2> attrib \"%s/%s\" = \"%s\"", SoundTouchXMLParser::tag, p.elemName.c_str(),
                       p.attrName.c_str(), p.attrVal.c_str() );
+          }
+          //
+          // is there an attrib "source" in elem nowPlaying?
+          //
+          if ( p.elemName.equals( UPDATE_PROPERTY_NPLAY_NOW_PLAYING ) && p.attrName.equals( UPDATE_PROPERTY_ATTR_SOURCE ) )
+          {
+            elog.log( DEBUG, "%s: <level 2> attrib \"%s/%s\" = \"%s\"", SoundTouchXMLParser::tag, p.elemName.c_str(),
+                      p.attrName.c_str(), p.attrVal.c_str() );
+            static_cast< SoundTouchNowPlayingUpdate * >( p.updatePtr )->source = p.attrVal;
+            p.updatePtr->isValid = true;
           }
         }
         break;
@@ -404,7 +457,7 @@ namespace soundtouch
     //
     // polymorph class, convert pointer
     //
-    SoundTouchVolume *dev = static_cast< SoundTouchVolume * >( ptr );
+    SoundTouchVolumeUpdate *dev = static_cast< SoundTouchVolumeUpdate * >( ptr );
     //
     if ( elemName.equals( UPDATE_PROPERTY_VOL_TARGET ) )
     {

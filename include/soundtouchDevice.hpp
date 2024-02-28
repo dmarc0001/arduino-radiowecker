@@ -14,6 +14,15 @@ namespace soundtouch
 {
   using namespace websockets;
 
+  enum SoundTouchDeviceRunningMode : uint8_t
+  {
+    ST_STATE_GET_INFOS,
+    ST_STATE_INIT_ALERT,
+    ST_STATE_WAIT_FOR_INIT_COMLETE,
+    ST_STATE_RUNNING_ALERT,
+    ST_STATE_UNKNOWN
+  };
+
   class SoundTouchDevice;
 
   using InstancePtr = std::pair< uint32_t, SoundTouchDevice * >;
@@ -29,12 +38,13 @@ namespace soundtouch
     static uint32_t instances;
     uint32_t instance;
     static InstancesList instList;
+    SoundTouchDeviceRunningMode runMode;
     WebsocketsClient wsClient;
     alarmclock::DeviceEntry device;
+    SoundTouchDeviceState currentState;
     XmlMessageList xmlList;
     DecodetMessageList msgList;
     SoundTouchXMLParserPtr parser;
-    //WiFiClient tcpClient;
     HTTPClient http;
     SoundTouchDevice();  //! no default constructor!
 
@@ -42,11 +52,17 @@ namespace soundtouch
     explicit SoundTouchDevice( alarmclock::DeviceEntry & );
     ~SoundTouchDevice();
     bool getDeviceInfos();  //! get device Infos for current State
+    inline SoundTouchDeviceRunningMode getDeviceRunningState()
+    {
+      return runMode;
+    }
 
     private:
     bool askForZones();                                                        //! ast via webinterface for zones on the device
     bool askForNowPlaying();                                                   //! ask for playing now
+    bool askForVolume();                                                       //! ask via webinterface for current volume
     void onMessageCallback( WebsocketsMessage );                               //! callback for device messages
+    String getUrlString( const char * );                                       //! get url for an command
     void onEventCallback( WebsocketsEvent, String );                           //! callback for device events
     void onDecodetMessage( SoundTouchUpdateTmplPtr );                          //! if an message was decodet
     static void start();                                                       //! start task

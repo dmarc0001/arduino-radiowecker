@@ -11,6 +11,7 @@ namespace soundtouch
   {
     bool isError{ false };
     WsMsgType type{ WS_UNKNOWN };
+    String deviceID;
     uint8_t depth{ 0 };
     String elemName;
     String piVal;
@@ -26,6 +27,7 @@ namespace soundtouch
     static const char *tag;
     XmlMessageList &xmlList;
     DecodetMessageList &msgList;
+    SemaphoreHandle_t parseSem;
 
     public:
     explicit SoundTouchXMLParser( XmlMessageList &, DecodetMessageList & );
