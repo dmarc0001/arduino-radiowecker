@@ -483,14 +483,14 @@ namespace soundtouch
   void SoundTouchDevice::wsTask( void * )
   {
     int64_t nextPing{ esp_timer_get_time() + getMicrosForMiliSec( 8000L ) };
-    int64_t nextMark = esp_timer_get_time() + getMicrosForMiliSec( 21003L );
+    int64_t nextMark =
+        esp_timer_get_time() + getMicrosForMiliSec( appprefs::TASK_MARK_INTERVAL_MS + static_cast< int32_t >( random( 2000 ) ) );
     bool timeToPing{ false };
 
     elog.log( logger::INFO, "%s: soundtouch websocket task start...", SoundTouchDevice::tag );
 
     while ( true )
     {
-      timeToPing = ( esp_timer_get_time() > nextPing );
       timeToPing = ( esp_timer_get_time() > nextPing );
       for ( auto elem : SoundTouchDevice::instList )
       {
@@ -509,7 +509,8 @@ namespace soundtouch
       if ( nextMark < esp_timer_get_time() )
       {
         elog.log( DEBUG, "%s: ==== MARK ==== wsTask", SoundTouchDevice::tag );
-        nextMark = esp_timer_get_time() + getMicrosForMiliSec( 21007L );
+        nextMark =
+            esp_timer_get_time() + getMicrosForMiliSec( appprefs::TASK_MARK_INTERVAL_MS + static_cast< int32_t >( random( 2000 ) ) );
       }
       yield();
     }

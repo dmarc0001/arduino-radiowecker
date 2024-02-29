@@ -69,7 +69,7 @@ namespace alarmclock
     int64_t nextWLANLedActionTime{ WLANlongActionDist };
     int64_t nextHTTPLedActionTime{ HTTPActionDarkDist };
     int64_t nowTime = esp_timer_get_time();
-    int64_t nextMark = esp_timer_get_time() + getMicrosForMiliSec( 25003L );
+    int64_t nextMark = esp_timer_get_time() + getMicrosForMiliSec( appprefs::TASK_MARK_INTERVAL_MS + static_cast< int32_t >( random( 2000 ) ) );
     bool led_changed{ false };
 
     while ( true )
@@ -103,7 +103,7 @@ namespace alarmclock
       if ( nextMark < esp_timer_get_time() )
       {
         elog.log( DEBUG, "%s: ==== MARK ==== ledTask", LEDStripe::tag );
-        nextMark = esp_timer_get_time() + getMicrosForMiliSec( 25003L );
+        nextMark = esp_timer_get_time() + getMicrosForMiliSec( appprefs::TASK_MARK_INTERVAL_MS + static_cast< int32_t >( random( 2000 ) ) );
       }
     }
   }

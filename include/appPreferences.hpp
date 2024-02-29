@@ -38,6 +38,7 @@ namespace appprefs
   constexpr uint32_t LED_STRIP_RESOLUTION_HZ = 10000000;       //! 10MHz resolution, 1 tick = 0.1us
   constexpr uint8_t LED_STATUS = 0;                            //! indicator WLAN
   constexpr uint8_t LED_ALL = 255;                             //! indicator means all led'S
+  constexpr int32_t TASK_MARK_INTERVAL_MS = 43000;             //! interval between "mark" in tasks for debuging
 
   class LocalPrefs
   {

@@ -1,3 +1,4 @@
+#include "appPreferences.hpp"
 #include "deviceDiscover.hpp"
 #include "statusObject.hpp"
 #include "statics.hpp"
@@ -40,7 +41,8 @@ namespace soundtouch
     int64_t nextTimeDiscover{ esp_timer_get_time() + getMicrosForMiliSec( NEXT_TIME_DISCOVER_SHORT ) };
     int64_t nextTimeMDNSCheck{ esp_timer_get_time() + getMicrosForMiliSec( NEXT_TIME_MDNS_SHORT ) };
     WlanState oldConnectionState{ WlanState::DISCONNECTED };
-    int64_t nextMark = esp_timer_get_time() + getMicrosForMiliSec( 22000L );
+    int64_t nextMark =
+        esp_timer_get_time() + getMicrosForMiliSec( appprefs::TASK_MARK_INTERVAL_MS + static_cast< int32_t >( random( 2000 ) ) );
     //
     // forever
     //
@@ -51,46 +53,46 @@ namespace soundtouch
       // mDNS state checking
       //
       if ( esp_timer_get_time() > nextTimeMDNSCheck )
-      if ( esp_timer_get_time() > nextTimeMDNSCheck )
-      {
-        //
-        // at first, has state changed?
-        //
-        if ( StatusObject::getWlanState() != oldConnectionState )
+        if ( esp_timer_get_time() > nextTimeMDNSCheck )
         {
-          WlanState newConnectionState = StatusObject::getWlanState();
           //
-          // state has changed
+          // at first, has state changed?
           //
-          if ( newConnectionState == WlanState::TIMESYNCED || newConnectionState == WlanState::CONNECTED )
+          if ( StatusObject::getWlanState() != oldConnectionState )
           {
-            // if has timesynced => start mdns
-            if ( !DeviceDiscover::mdnsIsRunning )
+            WlanState newConnectionState = StatusObject::getWlanState();
+            //
+            // state has changed
+            //
+            if ( newConnectionState == WlanState::TIMESYNCED || newConnectionState == WlanState::CONNECTED )
             {
-              DeviceDiscover::startMDNS();
-              nextTimeDiscover = esp_timer_get_time() + getMicrosForMiliSec( NEXT_TIME_DISCOVER_SHORT );
+              // if has timesynced => start mdns
+              if ( !DeviceDiscover::mdnsIsRunning )
+              {
+                DeviceDiscover::startMDNS();
+                nextTimeDiscover = esp_timer_get_time() + getMicrosForMiliSec( NEXT_TIME_DISCOVER_SHORT );
+              }
             }
+            else if ( newConnectionState == WlanState::DISCONNECTED || newConnectionState == WlanState::FAILED )
+            {
+              // state was disconnected
+              DeviceDiscover::stopMDNS();
+            }
+            oldConnectionState = newConnectionState;
           }
-          else if ( newConnectionState == WlanState::DISCONNECTED || newConnectionState == WlanState::FAILED )
-          {
-            // state was disconnected
-            DeviceDiscover::stopMDNS();
-          }
-          oldConnectionState = newConnectionState;
+          nextTimeMDNSCheck = esp_timer_get_time() + getMicrosForMiliSec( NEXT_TIME_MDNS );
         }
-        nextTimeMDNSCheck = esp_timer_get_time() + getMicrosForMiliSec( NEXT_TIME_MDNS );
-      }
 
       //
       // checking if device discovering is current
       //
       if ( esp_timer_get_time() < nextTimeDiscover )
-      if ( esp_timer_get_time() < nextTimeDiscover )
-      {
-        // wait loop for next discovering or mDNS check
-        yield();
-        continue;
-      }
+        if ( esp_timer_get_time() < nextTimeDiscover )
+        {
+          // wait loop for next discovering or mDNS check
+          yield();
+          continue;
+        }
       //
       // ok discover the devices
       // a little entrophy please
@@ -117,7 +119,7 @@ namespace soundtouch
       if ( nextMark < esp_timer_get_time() )
       {
         elog.log( DEBUG, "%s: ==== MARK ==== discoverTask", DeviceDiscover::tag );
-        nextMark = esp_timer_get_time() + getMicrosForMiliSec( 21003L );
+        nextMark = esp_timer_get_time() + getMicrosForMiliSec( appprefs::TASK_MARK_INTERVAL_MS + static_cast< int32_t >( random( 2000 ) ) );
       }
 
       yield();
@@ -305,7 +307,7 @@ namespace soundtouch
     }
     else
     {
-      xTaskCreate( DeviceDiscover::discoverTask, "led-task", configMINIMAL_STACK_SIZE * 4, nullptr, tskIDLE_PRIORITY +1,
+      xTaskCreate( DeviceDiscover::discoverTask, "led-task", configMINIMAL_STACK_SIZE * 4, nullptr, tskIDLE_PRIORITY + 1,
                    &DeviceDiscover::taskHandle );
     }
   }
