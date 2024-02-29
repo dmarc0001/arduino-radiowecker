@@ -27,7 +27,7 @@ namespace soundtouch
       //
       // step 2 wait while init the device
       //
-      int64_t endTimeout = esp_timer_get_time() + timeout_ms;
+      int64_t endTimeout = esp_timer_get_time() + getMicrosForMiliSec( timeout_ms );
       while ( ST_STATE_INIT_ALERT != sdDevice->getDeviceRunningState() && endTimeout > esp_timer_get_time() )
       {
         delay( 50 );

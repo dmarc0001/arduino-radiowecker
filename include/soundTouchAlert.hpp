@@ -5,6 +5,7 @@
 #include <vector>
 #include <memory>
 #include "common.hpp"
+#include "appPreferences.hpp"
 #include "appStructs.hpp"
 #include "soundTouchDefs.hpp"
 #include "soundtouchDevice.hpp"
@@ -22,6 +23,6 @@ namespace soundtouch
     public:
     explicit SoundTouchAlert( alarmclock::DeviceEntry & );
     ~SoundTouchAlert();
-    bool init( int32_t timeout_ms = TIMEOUNT_WHILE_DEVICE_INIT * 1000 );
+    bool init( int32_t timeout_ms = TIMEOUNT_WHILE_DEVICE_INIT );
   };
 }  // namespace soundtouch

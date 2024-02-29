@@ -7,10 +7,10 @@ namespace soundtouch
   using namespace logger;
   using namespace alarmclock;
 
-  constexpr uint64_t NEXT_TIME_MDNS_SHORT = 4000UL;
-  constexpr uint64_t NEXT_TIME_MDNS = 17000UL;
-  constexpr uint64_t NEXT_TIME_DISCOVER_SHORT = 2500UL;
-  constexpr uint64_t NEXT_TIME_DISCOVER = 350000UL;
+  constexpr int32_t NEXT_TIME_MDNS_SHORT = 4000UL;
+  constexpr int32_t NEXT_TIME_MDNS = 17000UL;
+  constexpr int32_t NEXT_TIME_DISCOVER_SHORT = 2500UL;
+  constexpr int32_t NEXT_TIME_DISCOVER = 350000UL;
 
   const char *DeviceDiscover::tag{ "devdiscover" };
   bool DeviceDiscover::isInit{ false };
