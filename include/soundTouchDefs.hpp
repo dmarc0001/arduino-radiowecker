@@ -50,7 +50,7 @@ namespace soundtouch
   constexpr const char *WEB_GET_NOW_PLAYINGZONE{ "/nowPlaying" };                             //! get nowPlaying
   constexpr const char *WEB_GET_ZONE{ "/getZone" };                                           //! get zone question
   constexpr const char *WEB_GET_VOLUME{ "/volume" };                                          //! get device/zone volume
-  constexpr unsigned long TIMEOUNT_WHILE_DEVICE_INIT{ 5000 };  //! timeout in ms while soundtouch device is timeout
+  constexpr int32_t TIMEOUNT_WHILE_DEVICE_INIT{ 5000 };  //! timeout in ms while soundtouch device is timeout
 
   /**
    * defines which kind of ws message we have

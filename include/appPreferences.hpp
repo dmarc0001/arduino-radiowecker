@@ -7,6 +7,15 @@
 #include "eLog.hpp"
 #include <Preferences.h>
 
+constexpr int64_t getMicrosForSec( int32_t _sec )
+{
+  return ( 1000000LL * static_cast< int64_t >( _sec ) );
+}
+constexpr int64_t getMicrosForMiliSec( int32_t _sec )
+{
+  return ( 1000LL * static_cast< int64_t >( _sec ) );
+}
+
 namespace appprefs
 {
   //

@@ -1,4 +1,5 @@
 #include <utility>
+#include "appPreferences.hpp"
 #include "soundtouchDevice.hpp"
 #include "statics.hpp"
 
@@ -9,7 +10,7 @@ namespace soundtouch
   using namespace alarmclock;
   using namespace logger;
 
-  const char *SoundTouchDevice::tag{ "soundtouch" };
+  const char *SoundTouchDevice::tag{ "soundtouchdev" };
   TaskHandle_t SoundTouchDevice::wsTaskHandle{ nullptr };
   TaskHandle_t SoundTouchDevice::decTaskHandle{ nullptr };
   uint32_t SoundTouchDevice::instances{ 0 };
@@ -481,13 +482,15 @@ namespace soundtouch
    */
   void SoundTouchDevice::wsTask( void * )
   {
-    static unsigned long nextPing{ millis() + 8000UL };
+    int64_t nextPing{ esp_timer_get_time() + getMicrosForMiliSec( 8000L ) };
+    int64_t nextMark = esp_timer_get_time() + getMicrosForMiliSec( 21003L );
     bool timeToPing{ false };
 
-    nextPing = millis() + 8000UL;
+    elog.log( logger::INFO, "%s: soundtouch websocket task start...", SoundTouchDevice::tag );
+
     while ( true )
     {
-      timeToPing = ( millis() > nextPing );
+      timeToPing = ( esp_timer_get_time() > nextPing );
       for ( auto elem : SoundTouchDevice::instList )
       {
         if ( timeToPing )
@@ -498,8 +501,16 @@ namespace soundtouch
         elem.second->wsClient.poll();
       }
       if ( timeToPing )
-        nextPing = millis() + 17000UL + static_cast< unsigned long >( random( 1000 ) );
-      delay( 10 );
+      {
+        // nextPing = esp_timer_get_time() + getMicrosForMiliSec( 17000 + static_cast< int32_t >( random( 1000 ) ) );
+        nextPing = esp_timer_get_time() + getMicrosForMiliSec( 8000 );
+      }
+      if ( nextMark < esp_timer_get_time() )
+      {
+        elog.log( DEBUG, "%s: ==== MARK ==== wsTask", SoundTouchDevice::tag );
+        nextMark = esp_timer_get_time() + getMicrosForMiliSec( 21007L );
+      }
+      yield();
     }
   }
 
@@ -509,6 +520,8 @@ namespace soundtouch
   void SoundTouchDevice::decTask( void * )
   {
     bool wasEntry{ false };
+    int64_t nextMark = esp_timer_get_time() + getMicrosForMiliSec( 20000L );
+    elog.log( logger::INFO, "%s: soundtouch xml decoder task start...", SoundTouchDevice::tag );
     while ( true )
     {
       wasEntry = false;
@@ -537,9 +550,14 @@ namespace soundtouch
       //
       // if there was no entry in a list here
       //
+      yield();
       if ( !wasEntry )
       {
-        delay( 80 );
+        if ( nextMark < esp_timer_get_time() )
+        {
+          elog.log( DEBUG, "%s: ==== MARK ==== decTask", SoundTouchDevice::tag );
+          nextMark = esp_timer_get_time() + getMicrosForMiliSec( 21003L );
+        }
       }
     }
   }
@@ -549,7 +567,7 @@ namespace soundtouch
    */
   void SoundTouchDevice::start()
   {
-    elog.log( logger::INFO, "%s: soundtouch websocket task start...", SoundTouchDevice::tag );
+    // elog.log( logger::INFO, "%s: soundtouch websocket task start...", SoundTouchDevice::tag );
 
     if ( SoundTouchDevice::wsTaskHandle )
     {
@@ -558,11 +576,11 @@ namespace soundtouch
     }
     else
     {
-      xTaskCreate( SoundTouchDevice::wsTask, "ws-task", configMINIMAL_STACK_SIZE * 4, nullptr, tskIDLE_PRIORITY,
+      xTaskCreate( SoundTouchDevice::wsTask, "ws-task", configMINIMAL_STACK_SIZE * 4, nullptr, tskIDLE_PRIORITY + 1,
                    &SoundTouchDevice::wsTaskHandle );
     }
 
-    elog.log( logger::INFO, "%s: soundtouch xml decoder task start...", SoundTouchDevice::tag );
+    // elog.log( logger::INFO, "%s: soundtouch xml decoder task start...", SoundTouchDevice::tag );
 
     if ( SoundTouchDevice::decTaskHandle )
     {
@@ -571,7 +589,7 @@ namespace soundtouch
     }
     else
     {
-      xTaskCreate( SoundTouchDevice::decTask, "xml-task", configMINIMAL_STACK_SIZE * 4, nullptr, tskIDLE_PRIORITY,
+      xTaskCreate( SoundTouchDevice::decTask, "xml-task", configMINIMAL_STACK_SIZE * 4, nullptr, tskIDLE_PRIORITY + 1,
                    &SoundTouchDevice::decTaskHandle );
     }
   }

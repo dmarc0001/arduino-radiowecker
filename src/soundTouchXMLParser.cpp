@@ -73,6 +73,7 @@ namespace soundtouch
       const char *doc = msg.c_str();
       for ( ; *doc; doc++ )
       {
+        yield();
         yxml_ret_t r = yxml_parse( x, *doc );
         // result is.....
         switch ( r )
@@ -92,6 +93,7 @@ namespace soundtouch
             // element start
             params.elemName = std::move( String( x->elem ) );
             computeElemStart( params );
+            yield();
             ++params.depth;
             break;
           case YXML_CONTENT:
@@ -102,6 +104,7 @@ namespace soundtouch
             // element ends here
             --params.depth;
             computeElemEnd( params );
+            yield();
             params.elemName.clear();
             params.attrVal.clear();
             // element endet
@@ -137,6 +140,7 @@ namespace soundtouch
           break;
 
         /* Handle any tokens we are interested in */
+        yield();
       }
       if ( !params.isError )
       {

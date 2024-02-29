@@ -10,10 +10,10 @@ namespace alarmclock
   //
   // timer definitions
   //
-  constexpr int64_t WLANlongActionDist = 2500000LL;
-  constexpr int64_t WLANshortActionDist = 20000LL;
-  constexpr int64_t HTTPActionFlashDist = 35000LL;
-  constexpr int64_t HTTPActionDarkDist = 60000LL;
+  constexpr int64_t WLANlongActionDist = getMicrosForMiliSec( 2500 );
+  constexpr int64_t WLANshortActionDist = getMicrosForMiliSec( 20 );
+  constexpr int64_t HTTPActionFlashDist = getMicrosForMiliSec( 35 );
+  constexpr int64_t HTTPActionDarkDist = getMicrosForMiliSec( 60 );
 
   //
   // color definitions
@@ -25,7 +25,7 @@ namespace alarmclock
   CRGB LEDStripe::wlan_fail_col{ appprefs::LED_COLOR_WLAN_FAIL };
   CRGB LEDStripe::http_active{ appprefs::LED_COLOR_HTTP_ACTIVE };
 
-  const char *LEDStripe::tag{ "LEDStripe" };
+  const char *LEDStripe::tag{ "ledstripe" };
   TaskHandle_t LEDStripe::taskHandle{ nullptr };
   CRGB LEDStripe::leds[ appprefs::LED_STRIPE_COUNT ]{};
   CRGB LEDStripe::shadow_leds[ appprefs::LED_STRIPE_COUNT ]{};
@@ -55,7 +55,8 @@ namespace alarmclock
     }
     else
     {
-      xTaskCreate( LEDStripe::ledTask, "led-task", configMINIMAL_STACK_SIZE * 4, nullptr, tskIDLE_PRIORITY, &LEDStripe::taskHandle );
+      xTaskCreate( LEDStripe::ledTask, "led-task", configMINIMAL_STACK_SIZE * 4, nullptr, tskIDLE_PRIORITY + 1,
+                   &LEDStripe::taskHandle );
     }
   }
 
@@ -68,6 +69,7 @@ namespace alarmclock
     int64_t nextWLANLedActionTime{ WLANlongActionDist };
     int64_t nextHTTPLedActionTime{ HTTPActionDarkDist };
     int64_t nowTime = esp_timer_get_time();
+    int64_t nextMark = esp_timer_get_time() + getMicrosForMiliSec( 25003L );
     bool led_changed{ false };
 
     while ( true )
@@ -97,7 +99,12 @@ namespace alarmclock
       // what is the smallest time to next event?
       // need for delay
       //
-      delay( 5 );
+      yield();
+      if ( nextMark < esp_timer_get_time() )
+      {
+        elog.log( DEBUG, "%s: ==== MARK ==== ledTask", LEDStripe::tag );
+        nextMark = esp_timer_get_time() + getMicrosForMiliSec( 25003L );
+      }
     }
   }
 
@@ -108,7 +115,7 @@ namespace alarmclock
   {
     using namespace appprefs;
     static bool wlanLedSwitch{ true };
-    static WlanState cWlanState{ WlanState::FAILED };
+    static volatile WlanState cWlanState{ WlanState::FAILED };
     if ( cWlanState != StatusObject::getWlanState() )
     {
       *led_changed = true;

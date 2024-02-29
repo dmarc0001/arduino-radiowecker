@@ -37,9 +37,10 @@ namespace soundtouch
    */
   void DeviceDiscover::discoverTask( void * )
   {
-    static unsigned long nextTimeDiscover{ ( millis() + NEXT_TIME_DISCOVER_SHORT ) };
-    static unsigned long nextTimeMDNSCheck{ ( millis() + NEXT_TIME_MDNS_SHORT ) };
-    static WlanState oldConnectionState{ WlanState::DISCONNECTED };
+    int64_t nextTimeDiscover{ esp_timer_get_time() + getMicrosForMiliSec( NEXT_TIME_DISCOVER_SHORT ) };
+    int64_t nextTimeMDNSCheck{ esp_timer_get_time() + getMicrosForMiliSec( NEXT_TIME_MDNS_SHORT ) };
+    WlanState oldConnectionState{ WlanState::DISCONNECTED };
+    int64_t nextMark = esp_timer_get_time() + getMicrosForMiliSec( 22000L );
     //
     // forever
     //
@@ -49,7 +50,7 @@ namespace soundtouch
       //
       // mDNS state checking
       //
-      if ( millis() > nextTimeMDNSCheck )
+      if ( esp_timer_get_time() > nextTimeMDNSCheck )
       {
         //
         // at first, has state changed?
@@ -66,7 +67,7 @@ namespace soundtouch
             if ( !DeviceDiscover::mdnsIsRunning )
             {
               DeviceDiscover::startMDNS();
-              nextTimeDiscover = millis() + NEXT_TIME_DISCOVER_SHORT;
+              nextTimeDiscover = esp_timer_get_time() + getMicrosForMiliSec( NEXT_TIME_DISCOVER_SHORT );
             }
           }
           else if ( newConnectionState == WlanState::DISCONNECTED || newConnectionState == WlanState::FAILED )
@@ -76,23 +77,24 @@ namespace soundtouch
           }
           oldConnectionState = newConnectionState;
         }
-        nextTimeMDNSCheck = millis() + NEXT_TIME_MDNS;
+        nextTimeMDNSCheck = esp_timer_get_time() + getMicrosForMiliSec( NEXT_TIME_MDNS );
       }
 
       //
       // checking if device discovering is current
       //
-      if ( millis() < nextTimeDiscover )
+      if ( esp_timer_get_time() < nextTimeDiscover )
       {
         // wait loop for next discovering or mDNS check
-        delay( 103 );
+        yield();
         continue;
       }
       //
       // ok discover the devices
       // a little entrophy please
       //
-      nextTimeDiscover = millis() + static_cast< unsigned long >( random( NEXT_TIME_DISCOVER, NEXT_TIME_DISCOVER + 1500UL ) );
+      nextTimeDiscover = esp_timer_get_time() +
+                         getMicrosForMiliSec( static_cast< uint32_t >( random( NEXT_TIME_DISCOVER, NEXT_TIME_DISCOVER + 1500UL ) ) );
       if ( DeviceDiscover::mdnsIsRunning )
       {
         elog.log( DEBUG, "%s: start devices search...", DeviceDiscover::tag );
@@ -109,6 +111,14 @@ namespace soundtouch
         }
         //_soundtouch._tcp.local.
       }
+
+      if ( nextMark < esp_timer_get_time() )
+      {
+        elog.log( DEBUG, "%s: ==== MARK ==== discoverTask", DeviceDiscover::tag );
+        nextMark = esp_timer_get_time() + getMicrosForMiliSec( 21003L );
+      }
+
+      yield();
     }  // end while forever
   }
 
@@ -293,7 +303,7 @@ namespace soundtouch
     }
     else
     {
-      xTaskCreate( DeviceDiscover::discoverTask, "led-task", configMINIMAL_STACK_SIZE * 4, nullptr, tskIDLE_PRIORITY,
+      xTaskCreate( DeviceDiscover::discoverTask, "led-task", configMINIMAL_STACK_SIZE * 4, nullptr, tskIDLE_PRIORITY +1,
                    &DeviceDiscover::taskHandle );
     }
   }

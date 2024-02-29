@@ -117,20 +117,20 @@ void loop()
   using namespace logger;
 
   // next time logger time sync
-  static unsigned long setNextTimeCorrect{ ( millis() + ( 1000UL * 21600UL ) ) };
+  static int64_t setNextTimeCorrect{ ( esp_timer_get_time() + getMicrosForSec( 21600 ) ) };
   static auto connected = WlanState::DISCONNECTED;
   static std::shared_ptr< soundtouch::SoundTouchAlert > testAlert;
   //
   // for webserver
   //
   // EnvServer::WifiConfig::wm.process();
-  if ( setNextTimeCorrect < millis() )
+  if ( setNextTimeCorrect < esp_timer_get_time() )
   {
     //
     // somtimes correct elog time
     //
     elog.log( DEBUG, "main: logger time correction..." );
-    setNextTimeCorrect = ( millis() * 1000UL * 21600UL );
+    setNextTimeCorrect = esp_timer_get_time() + getMicrosForSec( 21600 );
     struct tm ti;
     if ( !getLocalTime( &ti ) )
     {
@@ -142,52 +142,46 @@ void loop()
       Elog::provideTime( ti.tm_year + 1900, ti.tm_mon + 1, ti.tm_mday, ti.tm_hour, ti.tm_min, ti.tm_sec );
       elog.log( DEBUG, "main: logger time correction...OK" );
     }
+    yield();
   }
-  delay( 600 );
+  // delay( 100 );
+  //
+  // check if the state chenged
+  //
   if ( connected != StatusObject::getWlanState() )
   {
+    // connection state has changed
     auto new_connected = StatusObject::getWlanState();
-    if ( connected == WlanState::DISCONNECTED || connected == WlanState::FAILED || connected == WlanState::SEARCHING )
+    switch ( new_connected )
     {
-      //
-      // was not functional for webservice
-      //
-      if ( new_connected == WlanState::CONNECTED || new_connected == WlanState::TIMESYNCED )
-      {
-        //
-        // new connection, start webservice
-        //
+      case WlanState::DISCONNECTED:
+      case WlanState::FAILED:
+      case WlanState::SEARCHING:
+        // it was with connection, now without
+        elog.log( WARNING, "main: ip connectivity lost, stop webserver." );
+        // TODO: EnvWebServer::stop();
+        if ( testAlert )
+          doTestThingsIfOffline( testAlert );
+        testAlert = nullptr;
+        break;
+      case WlanState::CONNECTED:
         elog.log( INFO, "main: ip connectivity found, start webserver." );
         // TODO: EnvWebServer::start();
-        testAlert = doTestThingsIfOnline();
-        if ( testAlert )
+        break;
+      case WlanState::TIMESYNCED:
+        elog.log( INFO, "main: timesynced. enable alerts..." );
+        if ( !testAlert )
         {
-          elog.log( INFO, "main::loop: okay while soundtouch device (get infos)..." );
+          testAlert = doTestThingsIfOnline();
+          if ( testAlert )
+          {
+            elog.log( INFO, "main::loop: okay while soundtouch device (get infos)..." );
+          }
         }
-      }
-      else
-      {
-        elog.log( WARNING, "main: ip connectivity lost, stop webserver." );
-        // TODO: EnvWebServer::stop();
-        doTestThingsIfOffline( testAlert );
-        testAlert = nullptr;
-      }
-    }
-    else
-    {
-      //
-      // was functional for webservice
-      //
-      if ( !( new_connected == WlanState::CONNECTED || new_connected == WlanState::TIMESYNCED ) )
-      {
-        //
-        // not longer functional
-        //
-        elog.log( WARNING, "main: ip connectivity lost, stop webserver." );
-        // TODO: EnvWebServer::stop();
-      }
+        break;
     }
     // mark new value
     connected = new_connected;
   }
+  yield();
 }

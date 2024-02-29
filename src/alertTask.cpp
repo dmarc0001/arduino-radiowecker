@@ -7,6 +7,7 @@ namespace alarmclock
 {
   using namespace logger;
 
+  int64_t nextMark = esp_timer_get_time() + getMicrosForMiliSec( 21007L );
   const char *AlertTask::tag{ "alerttask" };
   bool AlertTask::isRunning{ false };
 
@@ -16,10 +17,15 @@ namespace alarmclock
     static bool isMsgSend{ false };
     while ( true )
     {
-      sleep( 1 );
+      yield();
       //
       // DEBUGGING
       //
+      if ( nextMark < esp_timer_get_time() )
+      {
+        elog.log( DEBUG, "%s: ==== MARK ==== alTask", AlertTask::tag );
+        nextMark = esp_timer_get_time() + getMicrosForMiliSec( 21003L );
+      }
     }
   }
 
@@ -36,7 +42,7 @@ namespace alarmclock
     }
     else
     {
-      xTaskCreate( AlertTask::alTask, "alert-task", configMINIMAL_STACK_SIZE * 4, NULL, tskIDLE_PRIORITY, NULL );
+      xTaskCreate( AlertTask::alTask, "alert-task", configMINIMAL_STACK_SIZE * 4, NULL, tskIDLE_PRIORITY +1 , NULL );
     }
   }
 };  // namespace alarmclock

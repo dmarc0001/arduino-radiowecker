@@ -14,8 +14,8 @@ namespace alarmclock
   bool StatusObject::is_init{ false };
   bool StatusObject::is_running{ false };
   bool StatusObject::is_spiffs{ false };
-  WlanState StatusObject::wlanState{ WlanState::DISCONNECTED };
-  bool StatusObject::http_active{ false };
+  volatile WlanState StatusObject::wlanState{ WlanState::DISCONNECTED };
+  volatile bool StatusObject::http_active{ false };
   AlRecordList StatusObject::alertList;
   DevList StatusObject::devList;
 
