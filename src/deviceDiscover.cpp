@@ -7,10 +7,10 @@ namespace soundtouch
   using namespace logger;
   using namespace alarmclock;
 
-  constexpr uint32_t NEXT_TIME_MDNS_SHORT = 4000UL;
-  constexpr uint32_t NEXT_TIME_MDNS = 17000UL;
-  constexpr uint32_t NEXT_TIME_DISCOVER_SHORT = 2500UL;
-  constexpr uint32_t NEXT_TIME_DISCOVER = 350000UL;
+  constexpr uint64_t NEXT_TIME_MDNS_SHORT = 4000UL;
+  constexpr uint64_t NEXT_TIME_MDNS = 17000UL;
+  constexpr uint64_t NEXT_TIME_DISCOVER_SHORT = 2500UL;
+  constexpr uint64_t NEXT_TIME_DISCOVER = 350000UL;
 
   const char *DeviceDiscover::tag{ "devdiscover" };
   bool DeviceDiscover::isInit{ false };
@@ -51,6 +51,7 @@ namespace soundtouch
       // mDNS state checking
       //
       if ( esp_timer_get_time() > nextTimeMDNSCheck )
+      if ( esp_timer_get_time() > nextTimeMDNSCheck )
       {
         //
         // at first, has state changed?
@@ -83,6 +84,7 @@ namespace soundtouch
       //
       // checking if device discovering is current
       //
+      if ( esp_timer_get_time() < nextTimeDiscover )
       if ( esp_timer_get_time() < nextTimeDiscover )
       {
         // wait loop for next discovering or mDNS check

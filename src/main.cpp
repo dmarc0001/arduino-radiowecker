@@ -125,6 +125,7 @@ void loop()
   //
   // EnvServer::WifiConfig::wm.process();
   if ( setNextTimeCorrect < esp_timer_get_time() )
+  if ( setNextTimeCorrect < esp_timer_get_time() )
   {
     //
     // somtimes correct elog time

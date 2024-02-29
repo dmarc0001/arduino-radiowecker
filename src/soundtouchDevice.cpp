@@ -491,6 +491,7 @@ namespace soundtouch
     while ( true )
     {
       timeToPing = ( esp_timer_get_time() > nextPing );
+      timeToPing = ( esp_timer_get_time() > nextPing );
       for ( auto elem : SoundTouchDevice::instList )
       {
         if ( timeToPing )
