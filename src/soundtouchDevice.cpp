@@ -16,6 +16,9 @@ namespace soundtouch
   uint32_t SoundTouchDevice::instances{ 0 };
   InstancesList SoundTouchDevice::instList;
 
+  /**
+   * constructor, must habe an reference to an soundtouch device
+   */
   SoundTouchDevice::SoundTouchDevice( alarmclock::DeviceEntry &_device ) : device( _device )
   {
     //
@@ -27,7 +30,7 @@ namespace soundtouch
     SoundTouchDevice::instList.push_back( myInstance );
     elog.log( INFO, "%s: create Instance: %d", SoundTouchDevice::tag, this->instance );
     http.setReuse( true );  /// keep-alive
-    runMode = ST_STATE_GET_INFOS;
+    runMode = ST_STATE_UNINITIALIZED;
     //
     // make callbacks
     // run callback when messages are received
@@ -96,6 +99,7 @@ namespace soundtouch
    */
   bool SoundTouchDevice::getDeviceInfos()
   {
+    runMode = ST_STATE_GET_INFOS;
     if ( askForNowPlaying() )
     {
       delay( 25 );
@@ -230,7 +234,7 @@ namespace soundtouch
   bool SoundTouchDevice::askForVolume()
   {
     bool wasOk{ false };
-    String questionString( std::move( getUrlString( WEB_GET_VOLUME ) ) );
+    String questionString( std::move( getUrlString( WEB_CMD_VOLUME ) ) );
 
     elog.log( DEBUG, "%s: ask for volume...(%s)", SoundTouchDevice::tag, questionString.c_str() );
     // prepare http
@@ -266,7 +270,119 @@ namespace soundtouch
     //   <actualvolume>44</actualvolume>
     //   <muteenabled>false</muteenabled>
     // </volume>
+    http.end();
     return ( wasOk );
+  }
+
+  /**
+   * simulate press power button if needet
+   */
+  bool SoundTouchDevice::setPower( bool _pwstate )
+  {
+    if ( ( currentState.playStatus == STANDBY_STATE ) != _pwstate )
+      return true;
+    //
+    return clickSoundTouchVirtualButton( KEY_POWER );
+  }
+
+  /**
+   * simulate press mute key if needet
+   */
+  bool SoundTouchDevice::setMute( bool _mute )
+  {
+    if ( currentState.currVolume.mute == _mute )
+      return true;
+    //
+    return clickSoundTouchVirtualButton( KEY_MUTE );
+  }
+
+  /**
+   * touch an virtual soundtouch button
+   */
+  bool SoundTouchDevice::touchBtn( String &_btn )
+  {
+    return clickSoundTouchVirtualButton( _btn );
+  }
+
+  /**
+   * touch an virtual soundtouch button
+   */
+  bool SoundTouchDevice::touchBtn( const char *_btn )
+  {
+    return clickSoundTouchVirtualButton( _btn );
+  }
+
+  /**
+   * set current volume on device
+   */
+  bool SoundTouchDevice::setCurrentVolume( uint8_t _vol, bool _mute )
+  {
+    bool wasOk{ false };
+    String questionString( std::move( getUrlString( WEB_CMD_VOLUME ) ) );
+    char buffer[ 32 ];
+    char *bufferPtr = &buffer[ 0 ];
+    // faster, less memory as String
+    snprintf( bufferPtr, 32, "<volume>%d</volume>", static_cast< int >( _vol ) );
+    String payload( bufferPtr );
+    elog.log( DEBUG, "%s: set volume to %s", SoundTouchDevice::tag, payload.c_str() );
+    http.begin( questionString );
+    //  make question
+    int httpResponseCode = http.POST( payload );
+    delay( 50 );
+    if ( httpResponseCode > 0 )
+    {
+      wasOk = true;
+    }
+    http.end();
+    if ( currentState.currVolume.mute != _mute )
+      return setMute( _mute );
+    return ( wasOk );
+  }
+
+  /**
+   * click virtual button on soundtouch device
+   */
+  bool SoundTouchDevice::clickSoundTouchVirtualButton( const String &_btn )
+  {
+    return clickSoundTouchVirtualButton( _btn.c_str() );
+  }
+
+  /**
+   * click virtual button on soundtouch device
+   */
+  bool SoundTouchDevice::clickSoundTouchVirtualButton( const char *_btn )
+  {
+    String questionString( std::move( getUrlString( WEB_CMD_KEY ) ) );
+    int httpResponseCode;
+    char buffer[ 64 ];
+    char *bufferPtr = &buffer[ 0 ];
+    elog.log( DEBUG, "%s: toggle button %s", SoundTouchDevice::tag, _btn );
+    //
+    // press and release key
+    //
+    for ( int i = 0; i < 2; ++i )
+    {
+      const char *keyState = ( i == 0 ) ? KEY_PRESS : KEY_RELEASE;
+      snprintf( bufferPtr, 64, "<key state=\"%s\" sender=\"Gabbo\">%s</key>", keyState, _btn );
+      String payload( bufferPtr );
+      elog.log( DEBUG, "%s: set keypress...(%s) %s", SoundTouchDevice::tag, questionString.c_str(), keyState );
+      http.begin( questionString );
+      //  make question
+      httpResponseCode = http.POST( payload );
+      if ( httpResponseCode < 0 )
+      {
+        elog.log( ERROR, "%s: error while send keystroke %d, errcode -%03d, ABORT", SoundTouchDevice::tag, _btn,
+                  0 - httpResponseCode );
+        http.end();
+        return false;
+      }
+      else
+      {
+        http.end();
+        delay( ( 2 - i ) * 10 );
+      }
+    }
+    return ( true );
   }
 
   /**
@@ -393,44 +509,51 @@ namespace soundtouch
    */
   void SoundTouchDevice::onDecodetMessage( SoundTouchUpdateTmplPtr ptr )
   {
-    // elog.log( INFO, "%s: rec decodet msg, type %d", SoundTouchDevice::tag, ptr->getUpdateType() );
-
+    elog.log( INFO, "%s: rec decodet msg, type %d", SoundTouchDevice::tag, ptr->getUpdateType() );
+    //
+    // decode enytime
+    //
+    switch ( ptr->getUpdateType() )
+    {
+      case MSG_UPDATE_VOLUME:
+        //
+        // save the current state
+        //
+        currentState.currVolume.currVol = static_cast< SoundTouchVolumeUpdate * >( ptr.get() )->currVol;
+        currentState.currVolume.targetVol = static_cast< SoundTouchVolumeUpdate * >( ptr.get() )->targetVol;
+        currentState.currVolume.mute = static_cast< SoundTouchVolumeUpdate * >( ptr.get() )->mute;
+        currentState.stateChecked.isVolume = true;
+        // elog.log( INFO, "%s: rec decodet msg, state: get infos, type: volume (%d/%d)", SoundTouchDevice::tag,
+        //           currentState.currVolume.currVol, currentState.currVolume.targetVol );
+        break;
+      case MSG_UPDATE_NOW_PLAYING_CHANGED:
+        currentState.playItem = static_cast< SoundTouchNowPlayingUpdate * >( ptr.get() )->contenItem;
+        currentState.playStatus = static_cast< SoundTouchNowPlayingUpdate * >( ptr.get() )->playStatus;
+        // elog.log( INFO, "%s: rec decodet msg, state: get infos, type: playstatus (%s)", SoundTouchDevice::tag,
+        //           currentState.playStatus == PLAY_STATE ? "playing" : "not playing" );
+        currentState.stateChecked.isPlaying = true;
+        break;
+      case MSG_UPDATE_ZONE:
+        currentState.masterID = static_cast< SoundTouchZoneUpdate * >( ptr.get() )->masterID;
+        currentState.members = static_cast< SoundTouchZoneUpdate * >( ptr.get() )->members;
+        // elog.log(
+        //     INFO, "%s: rec decodet msg, state: get infos, type: zones, members: %d (%s)", SoundTouchDevice::tag,
+        //     currentState.members.size(),
+        //     ( ( currentState.masterID == currentState.deviceID ) && ( currentState.members.size() > 0 ) ) ? "master" : "not master"
+        //     );
+        currentState.stateChecked.isZone = true;
+        break;
+      default:
+        elog.log( WARNING, "%s: rec decodet msg, state: get infos, type: unkown (%d)", SoundTouchDevice::tag,
+                  static_cast< int >( ptr->getUpdateType() ) );
+    }
+    //
+    // special on decode time
+    //
     switch ( runMode )
     {
+      case ST_STATE_UNINITIALIZED:
       case ST_STATE_GET_INFOS:
-        switch ( ptr->getUpdateType() )
-        {
-          case MSG_UPDATE_VOLUME:
-            //
-            // save the current state
-            //
-            currentState.currVolume.currVol = static_cast< SoundTouchVolumeUpdate * >( ptr.get() )->currVol;
-            currentState.currVolume.targetVol = static_cast< SoundTouchVolumeUpdate * >( ptr.get() )->targetVol;
-            currentState.currVolume.mute = static_cast< SoundTouchVolumeUpdate * >( ptr.get() )->mute;
-            currentState.stateChecked.isVolume = true;
-            elog.log( INFO, "%s: rec decodet msg, state: get infos, type: volume (%d)", SoundTouchDevice::tag,
-                      currentState.currVolume.currVol );
-            break;
-          case MSG_UPDATE_NOW_PLAYING_CHANGED:
-            currentState.playItem = static_cast< SoundTouchNowPlayingUpdate * >( ptr.get() )->contenItem;
-            currentState.playStatus = static_cast< SoundTouchNowPlayingUpdate * >( ptr.get() )->playStatus;
-            elog.log( INFO, "%s: rec decodet msg, state: get infos, type: playstatus (%s)", SoundTouchDevice::tag,
-                      currentState.playStatus == PLAY_STATE ? "playing" : "not playing" );
-            currentState.stateChecked.isPlaying = true;
-            break;
-          case MSG_UPDATE_ZONE:
-            currentState.masterID = static_cast< SoundTouchZoneUpdate * >( ptr.get() )->masterID;
-            currentState.members = static_cast< SoundTouchZoneUpdate * >( ptr.get() )->members;
-            elog.log( INFO, "%s: rec decodet msg, state: get infos, type: zones, members: %d (%s)", SoundTouchDevice::tag,
-                      currentState.members.size(),
-                      ( ( currentState.masterID == currentState.deviceID ) && ( currentState.members.size() > 0 ) ) ? "master"
-                                                                                                                    : "not master" );
-            currentState.stateChecked.isZone = true;
-            break;
-          default:
-            elog.log( WARNING, "%s: rec decodet msg, state: get infos, type: unkown (%d)", SoundTouchDevice::tag,
-                      static_cast< int >( ptr->getUpdateType() ) );
-        }  // end switch updateType
         //
         // ckeck if state change is needet
         //
@@ -442,7 +565,7 @@ namespace soundtouch
           elog.log( INFO, "%s: now in state: alert init...", SoundTouchDevice::tag );
           runMode = ST_STATE_INIT_ALERT;
           //
-          // TODO: config devices
+          // next config Device for alert
           // if no zone and no playing, config device(s)
           //
         }
@@ -452,19 +575,6 @@ namespace soundtouch
         //
         // check, if the device standby?
         //
-        if ( currentState.playStatus == PAUSE_STATE || currentState.playStatus == STOP_STATE )
-        {
-          //
-          // okay, device is not playing, it's good!
-          //
-          if ( currentState.masterID.isEmpty() && currentState.members.size() == 0 )
-          {
-            //
-            // also good, no zonemember, no zonemaster
-            // init device!
-            //
-          }
-        }
         break;
 
       case ST_STATE_WAIT_FOR_INIT_COMLETE:
@@ -472,8 +582,6 @@ namespace soundtouch
 
       default:
         break;
-
-        // TODO: what if this devivce is zone member?
     }  // end switch runMode
   }
 
@@ -482,12 +590,14 @@ namespace soundtouch
    */
   void SoundTouchDevice::wsTask( void * )
   {
+    static const char *tag{ "wstask" };
+
     int64_t nextPing{ esp_timer_get_time() + getMicrosForMiliSec( 8000L ) };
     int64_t nextMark =
         esp_timer_get_time() + getMicrosForMiliSec( appprefs::TASK_MARK_INTERVAL_MS + static_cast< int32_t >( random( 2000 ) ) );
     bool timeToPing{ false };
 
-    elog.log( logger::INFO, "%s: soundtouch websocket task start...", SoundTouchDevice::tag );
+    elog.log( logger::INFO, "%s: soundtouch websocket task start...", tag );
 
     while ( true )
     {
@@ -503,12 +613,11 @@ namespace soundtouch
       }
       if ( timeToPing )
       {
-        // nextPing = esp_timer_get_time() + getMicrosForMiliSec( 17000 + static_cast< int32_t >( random( 1000 ) ) );
-        nextPing = esp_timer_get_time() + getMicrosForMiliSec( 8000 );
+        nextPing = esp_timer_get_time() + getMicrosForMiliSec( 8000 + static_cast< int32_t >( random( 1000 ) ) );
       }
       if ( nextMark < esp_timer_get_time() )
       {
-        elog.log( DEBUG, "%s: ==== MARK ==== wsTask", SoundTouchDevice::tag );
+        elog.log( DEBUG, "%s: ==== MARK ====", tag );
         nextMark =
             esp_timer_get_time() + getMicrosForMiliSec( appprefs::TASK_MARK_INTERVAL_MS + static_cast< int32_t >( random( 2000 ) ) );
       }
@@ -521,9 +630,10 @@ namespace soundtouch
    */
   void SoundTouchDevice::decTask( void * )
   {
+    static const char *tag{ "decodertask" };
     bool wasEntry{ false };
     int64_t nextMark = esp_timer_get_time() + getMicrosForMiliSec( 20000L );
-    elog.log( logger::INFO, "%s: soundtouch xml decoder task start...", SoundTouchDevice::tag );
+    elog.log( logger::INFO, "%s: soundtouch xml decoder task start...", tag );
     while ( true )
     {
       wasEntry = false;
@@ -552,15 +662,15 @@ namespace soundtouch
       //
       // if there was no entry in a list here
       //
-      yield();
       if ( !wasEntry )
       {
         if ( nextMark < esp_timer_get_time() )
         {
-          elog.log( DEBUG, "%s: ==== MARK ==== decTask", SoundTouchDevice::tag );
+          elog.log( DEBUG, "%s: ==== MARK ====", tag );
           nextMark = esp_timer_get_time() + getMicrosForMiliSec( 21003L );
         }
       }
+      yield();
     }
   }
 

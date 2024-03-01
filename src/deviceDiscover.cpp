@@ -29,7 +29,6 @@ namespace soundtouch
       // make some preparations
       StatusObject::init();
       DeviceDiscover::start();
-      randomSeed( analogRead( 0 ) );
     }
   }
 
@@ -38,6 +37,7 @@ namespace soundtouch
    */
   void DeviceDiscover::discoverTask( void * )
   {
+    static const char *tag{"discovertask"};
     int64_t nextTimeDiscover{ esp_timer_get_time() + getMicrosForMiliSec( NEXT_TIME_DISCOVER_SHORT ) };
     int64_t nextTimeMDNSCheck{ esp_timer_get_time() + getMicrosForMiliSec( NEXT_TIME_MDNS_SHORT ) };
     WlanState oldConnectionState{ WlanState::DISCONNECTED };
@@ -46,7 +46,7 @@ namespace soundtouch
     //
     // forever
     //
-    elog.log( INFO, "%s: discoverTask running...", DeviceDiscover::tag );
+    elog.log( INFO, "%s: discoverTask running...", tag );
     while ( true )
     {
       //
@@ -101,11 +101,11 @@ namespace soundtouch
                          getMicrosForMiliSec( static_cast< uint32_t >( random( NEXT_TIME_DISCOVER, NEXT_TIME_DISCOVER + 1500UL ) ) );
       if ( DeviceDiscover::mdnsIsRunning )
       {
-        elog.log( DEBUG, "%s: start devices search...", DeviceDiscover::tag );
+        elog.log( DEBUG, "%s: start devices search...", tag );
         DevListPtr services = DeviceDiscover::discoverSoundTouchDevices();
         if ( services->size() == 0 )
         {
-          elog.log( DEBUG, "%s: start devices search, nothing found.", DeviceDiscover::tag );
+          elog.log( DEBUG, "%s: start devices search, nothing found.", tag );
         }
         else
         {
@@ -118,7 +118,7 @@ namespace soundtouch
 
       if ( nextMark < esp_timer_get_time() )
       {
-        elog.log( DEBUG, "%s: ==== MARK ==== discoverTask", DeviceDiscover::tag );
+        elog.log( DEBUG, "%s: ==== MARK ====", tag );
         nextMark = esp_timer_get_time() + getMicrosForMiliSec( appprefs::TASK_MARK_INTERVAL_MS + static_cast< int32_t >( random( 2000 ) ) );
       }
 

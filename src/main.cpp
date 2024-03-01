@@ -23,6 +23,12 @@ void setup()
   using namespace logger;
 
   const char *tag{ "main" };
+
+  //
+  // init the random generator
+  //
+  adcAttachPin( appprefs::RANDOM_INIT_PORT );
+  randomSeed( analogRead( appprefs::RANDOM_INIT_PORT ) );
   //
   // Debug Ausgabe initialisieren
   //
@@ -89,11 +95,43 @@ std::shared_ptr< soundtouch::SoundTouchAlert > doTestThingsIfOnline()
   device.wsPort = 8080;
   device.type = String( "Soundtouch" );
   device.note = String( "bemerkung" );
+
+  //
+  // i want to make the alert in two minutes after reset
+  //
+  time_t now = time( nullptr );
+  tm *lt = localtime( &now );
+  if ( lt->tm_min > 57 )
+  {
+    ++lt->tm_hour;
+    lt->tm_min = 0;
+  }
+  else
+  {
+    lt->tm_min += 2;
+  }
+  //
+  AlertEntry alert;
+  alert.name = "Testalert";                                  //! name of the alert
+  alert.volume = 16;                                         //! volume to weak up
+  alert.location = "";                                       //! have to read in manual api
+  alert.source = "PRESET_1";                                 //! preset or string to source
+  alert.raiseVol = true;                                     //! should volume raisng on? down
+  alert.duration = 120;                                      //! length in secounds
+  alert.days = { mo, tu, we, tu, fr, sa, su };               //! if present, days to alert
+  alert.devices.push_back( device.id );                      //! which devices?
+  alert.enable = true;                                       //! alert enable?
+  alert.note = "Test alert 001";                             //! user note (cause etc)
+  alert.alertHour = static_cast< uint8_t >( lt->tm_min );    //! which hour wake up
+  alert.alertMinute = static_cast< uint8_t >( lt->tm_min );  //! which minute wake up
+                                                             // uint8_t day;                //! if on a day, day number (1-31)
+                                                             // uint8_t month;              //! if on day, month number (1-12)
+
   //
   // create the device object
   //
-  std::shared_ptr< SoundTouchAlert > testAlert = std::make_shared< SoundTouchAlert >( device );
-  sleep( 2 );
+  std::shared_ptr< SoundTouchAlert > testAlert = std::make_shared< SoundTouchAlert >( device, alert );
+  //
   if ( testAlert->init() )
   {
     // init was okay
@@ -102,13 +140,89 @@ std::shared_ptr< soundtouch::SoundTouchAlert > doTestThingsIfOnline()
   return nullptr;
 }
 
-void doTestThingsIfOffline( std::shared_ptr< soundtouch::SoundTouchAlert > testDev )
+void doTestThingsIfOffline( std::shared_ptr< soundtouch::SoundTouchAlert > testAlert )
 {
   using namespace alarmclock;
   using namespace logger;
   const char *tag{ "test" };
   elog.log( DEBUG, "%s: delete soundtouch alert...", tag );
-  delete testDev.get();
+  testAlert.reset();
+}
+
+void testLoop( std::shared_ptr< soundtouch::SoundTouchAlert > testAlert )
+{
+  using namespace soundtouch;
+  using namespace logger;
+  //
+  static int64_t timeoutTime{ ( esp_timer_get_time() + getMicrosForSec( TIMEOUNT_WHILE_DEVICE_INIT ) ) };
+  static SoundTouchDeviceRunningMode oldMode{ ST_STATE_UNKNOWN };
+
+  if ( !testAlert )
+    return;
+  switch ( testAlert->getDeviceRunningMode() )
+  {
+    case ST_STATE_UNINITIALIZED:
+      if ( oldMode != ST_STATE_UNINITIALIZED )
+      {
+        // first time, timeout activating
+        timeoutTime = ( esp_timer_get_time() + getMicrosForSec( TIMEOUNT_WHILE_DEVICE_INIT ) );
+        oldMode != ST_STATE_UNINITIALIZED;
+      }
+      break;
+    case ST_STATE_GET_INFOS:
+      if ( oldMode != ST_STATE_GET_INFOS )
+      {
+        // first time, timeout activating
+        timeoutTime = ( esp_timer_get_time() + getMicrosForSec( TIMEOUNT_WHILE_DEVICE_INIT ) );
+        oldMode != ST_STATE_GET_INFOS;
+      }
+      // wait if timeout or next level
+      if ( timeoutTime < esp_timer_get_time() )
+      {
+        // timeout!
+        elog.log( ERROR, "main: device init TIMEOUT, Abort alert!" );
+        testAlert.reset();
+        return;
+      }
+      break;
+    case ST_STATE_INIT_ALERT:
+      oldMode = ST_STATE_INIT_ALERT;
+      testAlert->prepareAlertDevivce();
+      timeoutTime = esp_timer_get_time() + getMicrosForSec( TIMEOUNT_WHILE_DEVICE_INIT );
+      break;
+    case ST_STATE_WAIT_FOR_INIT_COMLETE:
+      oldMode = ST_STATE_WAIT_FOR_INIT_COMLETE;
+      // timeout
+      if ( timeoutTime < esp_timer_get_time() )
+      {
+        // timeout!
+        elog.log( ERROR, "main: device prepare TIMEOUT, Abort alert!" );
+        delay( 2000 );  //! DEBUG: debug
+        testAlert.reset();
+        return;
+      }
+      break;
+    case ST_STATE_RUNNING_ALERT:
+      if ( oldMode != ST_STATE_RUNNING_ALERT )
+      {
+        // first time, timeout activating
+        timeoutTime = ( esp_timer_get_time() + getMicrosForSec( TIMEOUNT_WHILE_DEVICE_INIT ) );
+        oldMode != ST_STATE_RUNNING_ALERT;
+      }
+      // test if checkRunning Alert is false and timeout is over
+      if ( !testAlert->checkRunningAlert() && ( timeoutTime < esp_timer_get_time() ) )
+      {
+        // timeout!
+        elog.log( ERROR, "main: device running TIMEOUT or Alert aborted" );
+        delay( 2000 );  //! DEBUG: debug
+        testAlert.reset();
+        return;
+      }
+      break;
+    default:
+      // testAlert->checkRunningAlert();
+      break;
+  }
 }
 
 void loop()
@@ -118,13 +232,13 @@ void loop()
 
   // next time logger time sync
   static int64_t setNextTimeCorrect{ ( esp_timer_get_time() + getMicrosForSec( 21600 ) ) };
+  static int64_t setNextTimeTestLoop{ ( esp_timer_get_time() + getMicrosForMiliSec( 1503 ) ) };
   static auto connected = WlanState::DISCONNECTED;
   static std::shared_ptr< soundtouch::SoundTouchAlert > testAlert;
   //
   // for webserver
   //
   // EnvServer::WifiConfig::wm.process();
-  if ( setNextTimeCorrect < esp_timer_get_time() )
   if ( setNextTimeCorrect < esp_timer_get_time() )
   {
     //
@@ -145,7 +259,6 @@ void loop()
     }
     yield();
   }
-  // delay( 100 );
   //
   // check if the state chenged
   //
@@ -183,6 +296,14 @@ void loop()
     }
     // mark new value
     connected = new_connected;
+  }
+  //
+  // testloop if nessesary
+  //
+  if ( testAlert && ( setNextTimeTestLoop < esp_timer_get_time() ) )
+  {
+    setNextTimeTestLoop = esp_timer_get_time() + getMicrosForMiliSec( 600 );
+    testLoop( testAlert );
   }
   yield();
 }

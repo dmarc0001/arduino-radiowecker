@@ -11,9 +11,15 @@ namespace alarmclock
       esp_timer_get_time() + getMicrosForMiliSec( appprefs::TASK_MARK_INTERVAL_MS + static_cast< int32_t >( random( 2000 ) ) );
   const char *AlertTask::tag{ "alerttask" };
   bool AlertTask::isRunning{ false };
+  soundtouch::SoundTouchAlertListPtr AlertTask::acticeAlertList{ new soundtouch::SoundTouchAlertList() };
 
+  /**
+   * watch for time to alert
+   * sends alert a minute before start, to make some preparations on the device
+   */
   void AlertTask::alTask( void * )
   {
+    static const char *tag{ "alerttask" };
     AlertTask::isRunning = true;
     static bool isMsgSend{ false };
     while ( true )
@@ -24,10 +30,12 @@ namespace alarmclock
       //
       if ( nextMark < esp_timer_get_time() )
       {
-        elog.log( DEBUG, "%s: ==== MARK ==== alTask", AlertTask::tag );
+        elog.log( DEBUG, "%s: ==== MARK ====", tag );
         nextMark =
             esp_timer_get_time() + getMicrosForMiliSec( appprefs::TASK_MARK_INTERVAL_MS + static_cast< int32_t >( random( 2000 ) ) );
       }
+      //
+      // if an alert shopud start, create SoundTouchAlert, then init, playAlert----
     }
   }
 

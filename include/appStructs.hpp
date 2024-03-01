@@ -27,10 +27,7 @@ namespace alarmclock
     PRESET_4,
     PRESET_5,
     PRESET_6,
-    PRESET_7,
-    PRESET_8,
-    PRESET_9,
-    PRESET_10
+    PRESET_UNKNOWN
   };
 
   /**

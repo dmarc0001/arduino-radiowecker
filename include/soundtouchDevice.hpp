@@ -14,15 +14,6 @@ namespace soundtouch
 {
   using namespace websockets;
 
-  enum SoundTouchDeviceRunningMode : uint8_t
-  {
-    ST_STATE_GET_INFOS,
-    ST_STATE_INIT_ALERT,
-    ST_STATE_WAIT_FOR_INIT_COMLETE,
-    ST_STATE_RUNNING_ALERT,
-    ST_STATE_UNKNOWN
-  };
-
   class SoundTouchDevice;
 
   using InstancePtr = std::pair< uint32_t, SoundTouchDevice * >;
@@ -52,9 +43,40 @@ namespace soundtouch
     explicit SoundTouchDevice( alarmclock::DeviceEntry & );
     ~SoundTouchDevice();
     bool getDeviceInfos();  //! get device Infos for current State
+    bool setCurrentVolume( uint8_t, bool _mute = false );
+    bool setMute( bool );
+    bool setPower( bool );
+    bool touchBtn( String & );
+    bool touchBtn( const char * );
+    bool clickSoundTouchVirtualButton( const char * );
+    bool clickSoundTouchVirtualButton( const String & );
     inline SoundTouchDeviceRunningMode getDeviceRunningState()
     {
       return runMode;
+    }
+    inline WsPlayStatus getPlayState()
+    {
+      return currentState.playStatus;
+    }
+    inline bool isZoneMemberOrMaster()
+    {
+      return ( !( currentState.masterID.isEmpty() && ( currentState.members.size() == 0 ) ) );
+    }
+    inline SoundTouchDeviceRunningMode getDeviceRunningMode()
+    {
+      return runMode;
+    }
+    inline void setDeviceRunningMode( SoundTouchDeviceRunningMode _mode )
+    {
+      runMode = _mode;
+    }
+    inline uint8_t getCurrentVolume()
+    {
+      return currentState.currVolume.currVol;
+    }
+    inline bool getMuteState()
+    {
+      return currentState.currVolume.mute;
     }
 
     private:

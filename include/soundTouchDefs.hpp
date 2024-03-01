@@ -11,9 +11,9 @@ namespace soundtouch
   constexpr const char *UPDATE_VOLUME{ "volumeUpdated" };                             //! volume updated
   constexpr const char *UPDATE_PRESETS{ "presetsUpdated" };                           //! presets updated
   constexpr const char *UPDATE_NOW_PLAYING{ "nowPlayingUpdated" };                    //! playing updated
+  constexpr const char *UPDATE_RECENT{ "recentsUpdated" };                            //! update recent playings (ignore here)
   constexpr const char *UPDATE_BASS{ "bassUpdated" };                                 //! bass updated
   constexpr const char *UPDATE_ZONE{ "zoneUpdated" };                                 //! zone updated
-  constexpr const char *UPDATE_RECENT{ "recentsUpdated" };                            //! recent users updated
   constexpr const char *UPDATE_ACC_MODE{ "acctModeUpdated" };                         // ac mode updated
   constexpr const char *UPDATE_SOURCES{ "sourcesUpdated" };                           //! sources updated
   constexpr const char *UPDATE_NOW_SELECT{ "nowSelectionUpdated" };                   // now selection updated
@@ -38,6 +38,7 @@ namespace soundtouch
   constexpr const char *UPDATE_PROPERTY_NPLAY_STATIONLOC{ "stationLocation" };        //! where is the station
   constexpr const char *UPDATE_PROPERTY_NPLAY_STATIONNAME{ "stationName" };           //! what is the name of the station
   constexpr const char *UPDATE_PROPERTY_NPLAY_STREAMTYPE{ "streamType" };             //! which type of stream
+  constexpr const char *UPDATE_PROPERTY_NPLAY_PLAYSTATE_STANDBY{ "STANDBY" };         //! playstate
   constexpr const char *UPDATE_PROPERTY_NPLAY_PLAYSTATE_PLAY{ "PLAY_STATE" };         //! playstate
   constexpr const char *UPDATE_PROPERTY_NPLAY_PLAYSTATE_PAUSE{ "PAUSE_STATE" };       //! playstate
   constexpr const char *UPDATE_PROPERTY_NPLAY_PLAYSTATE_STOP{ "STOP_STATE" };         //! playstate
@@ -47,10 +48,24 @@ namespace soundtouch
   constexpr const char *UPDATE_PROPERTY_NPLAY_STREAMTYPE_ONDEMAND{ "TRACK_ONDEMAND" };        //! streamtype
   constexpr const char *UPDATE_PROPERTY_ZONE_ZONE{ "zone" };                                  //! zoneinfo level2 tag
   constexpr const char *UPDATE_PROPERTY_ZONE_ATTRIB_MASTER{ "master" };                       // attrib for zone -> master
-  constexpr const char *WEB_GET_NOW_PLAYINGZONE{ "/nowPlaying" };                             //! get nowPlaying
-  constexpr const char *WEB_GET_ZONE{ "/getZone" };                                           //! get zone question
-  constexpr const char *WEB_GET_VOLUME{ "/volume" };                                          //! get device/zone volume
-  constexpr int32_t TIMEOUNT_WHILE_DEVICE_INIT{ 5000 };  //! timeout in ms while soundtouch device is timeout
+  constexpr const char *KEY_MUTE{ "MUTE" };                                                   //! key for mute
+  constexpr const char *KEY_POWER{ "POWER" };                                                 //! power button
+  constexpr const char *KEY_VOL_UP{ "VOLUME_UP" };                                            //! volume key
+  constexpr const char *KEY_VOL_DOWN{ "VOLUME_DOWN" };                                        //! volume key
+  constexpr const char *KEY_PRESS{ "press" };                                                 //! key pressed
+  constexpr const char *KEY_RELEASE{ "release" };                                             //! key released
+  constexpr const char *KEY_PRESET_COMMON{ "PRESET_" };            //! for String.startsWith in alert.sources
+  constexpr const char *KEY_PRESET_01{ "PRESET_1" };               //! preset of the soundtouch device
+  constexpr const char *KEY_PRESET_02{ "PRESET_2" };               //! preset of the soundtouch device
+  constexpr const char *KEY_PRESET_03{ "PRESET_3" };               //! preset of the soundtouch device
+  constexpr const char *KEY_PRESET_04{ "PRESET_4" };               //! preset of the soundtouch device
+  constexpr const char *KEY_PRESET_05{ "PRESET_5" };               //! preset of the soundtouch device
+  constexpr const char *KEY_PRESET_06{ "PRESET_6" };               //! preset of the soundtouch device
+  constexpr const char *WEB_GET_NOW_PLAYINGZONE{ "/nowPlaying" };  //! get nowPlaying
+  constexpr const char *WEB_GET_ZONE{ "/getZone" };                //! get zone question
+  constexpr const char *WEB_CMD_VOLUME{ "/volume" };               //! get/set device/zone volume
+  constexpr const char *WEB_CMD_KEY{ "/key" };                     //! get/set device/zone mute
+  constexpr int32_t TIMEOUNT_WHILE_DEVICE_INIT{ 5000 };            //! timeout in ms while soundtouch device is timeout
 
   /**
    * defines which kind of ws message we have
@@ -63,6 +78,21 @@ namespace soundtouch
   };
 
   /**
+   * which state is the Alert with his device(s)
+   */
+  enum SoundTouchDeviceRunningMode : uint8_t
+  {
+    ST_STATE_UNINITIALIZED,
+    ST_STATE_GET_INFOS,
+    ST_STATE_INIT_ALERT,
+    ST_STATE_WAIT_FOR_INIT_COMLETE,
+    ST_STATE_RUNNING_ALERT,
+    ST_STATE_END_ALERT,
+    ST_STATE_ERROR,
+    ST_STATE_UNKNOWN
+  };
+
+  /**
    * which update (WS_UPDATES)
    */
   enum WsMsgUpdateType : uint8_t
@@ -72,6 +102,7 @@ namespace soundtouch
     MSG_UPDATE_ZONE,                 // zoneUpdated
     MSG_UPDATE_INFOS,                // infoUpdated
     MSG_UPDATE_CONNECTION_STATE,     // connectionStateUpdated
+    MAG_UPDATE_RECENT,               // recent list update (ignore)
     MSG_UPDATE_PRESETS,              // presetsUpdated
     MSG_UPDATE_BASS,                 // bassUpdated
     MSG_UPDATE_RECENTS,              // recentsUpdated
@@ -88,10 +119,11 @@ namespace soundtouch
    */
   enum WsPlayStatus : uint8_t
   {
-    PLAY_STATE,
-    PAUSE_STATE,
+    STANDBY_STATE,
     STOP_STATE,
+    PAUSE_STATE,
     BUFFERING_STATE,
+    PLAY_STATE,
     INVALID_PLAY_STATUS
   };
 
@@ -180,6 +212,7 @@ namespace soundtouch
     {
       // make the right type
       this->msgType = MSG_UPDATE_NOW_PLAYING_CHANGED;
+      this->playStatus = STANDBY_STATE;
     };
 
     // <nowPlaying deviceID="689E19653E96" source="TUNEIN" sourceAccount="">
@@ -232,7 +265,6 @@ namespace soundtouch
     //   </zoneUpdated>
     // </updates>
 
-    // TODO: what if this devivce is zone member?
     // <updates deviceID="689E19653E96">
     //   <zoneUpdated>
     //     <zone master="F45EABFBCD9A" senderIPAddress="192.168.1.20" senderIsMaster="true">
@@ -288,3 +320,25 @@ namespace soundtouch
   using DecodetMessageList = std::vector< SoundTouchUpdateTmplPtr >;
 
 }  // namespace soundtouch
+
+// clang-format off
+//
+// some useful things http://soundtouchdevice:8090/sources
+//
+// <sources deviceID="689E19653E96">
+// <sourceItem source="AUX" sourceAccount="AUX" status="READY" isLocal="true" multiroomallowed="true">AUX IN</sourceItem>
+// <sourceItem source="BLUETOOTH" status="UNAVAILABLE" isLocal="true" multiroomallowed="true"/>
+// <sourceItem source="NOTIFICATION" status="UNAVAILABLE" isLocal="false" multiroomallowed="true"/>
+// <sourceItem source="AMAZON" sourceAccount="useraccountname" status="READY" isLocal="false" multiroomallowed="true">useraccountname</sourceItem>
+// <sourceItem source="QPLAY" sourceAccount="QPlay1UserName" status="UNAVAILABLE" isLocal="true" multiroomallowed="true">QPlay1UserName</sourceItem>
+// <sourceItem source="QPLAY" sourceAccount="QPlay2UserName" status="UNAVAILABLE" isLocal="true" multiroomallowed="true">QPlay2UserName</sourceItem>
+// <sourceItem source="UPNP" sourceAccount="UPnPUserName" status="UNAVAILABLE" isLocal="false" multiroomallowed="true">UPnPUserName</sourceItem>
+// <sourceItem source="SPOTIFY" sourceAccount="SpotifyConnectUserName" status="UNAVAILABLE" isLocal="false" multiroomallowed="true">SpotifyConnectUserName</sourceItem>
+// <sourceItem source="STORED_MUSIC_MEDIA_RENDERER" sourceAccount="StoredMusicUserName" status="UNAVAILABLE" isLocal="false" multiroomallowed="true">StoredMusicUserName</sourceItem>
+// <sourceItem source="SPOTIFY" sourceAccount="SpotifyAlexaUserName" status="UNAVAILABLE" isLocal="false" multiroomallowed="true">SpotifyAlexaUserName</sourceItem>
+// <sourceItem source="ALEXA" status="READY" isLocal="false" multiroomallowed="true"/>
+// <sourceItem source="TUNEIN" status="READY" isLocal="false" multiroomallowed="true"/>
+// <sourceItem source="LOCAL_INTERNET_RADIO" status="READY" isLocal="false" multiroomallowed="true"/>
+// </sources>
+//
+// clang-format on
