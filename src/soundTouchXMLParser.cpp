@@ -46,11 +46,6 @@ namespace soundtouch
       //
       String msg = std::move( xmlList.front() );
       xmlList.erase( xmlList.begin() );
-      // #ifdef BUILD_DEBUG
-      //     delay( 50 );
-      //     elog.log( DEBUG, "%s: decode xml message \"%s\"...", SoundTouchXMLParser::tag, msg.c_str() );
-      //     delay( 250 );
-      // #endif
       //
       // first init xml resources
       // 1+10*(stringlen+1)+(50+1)
@@ -131,8 +126,8 @@ namespace soundtouch
           case YXML_PICONTENT: /* Content of a PI                            */
             params.piVal += String( x->pi );
           case YXML_PIEND: /* End of a processing instruction            */
-            elog.log( DEBUG, "%s: <level %d> pi \"%s\" = \"%s\"", SoundTouchXMLParser::tag, params.depth, params.elemName.c_str(),
-                      params.attrVal.c_str() );
+            // elog.log( DEBUG, "%s: <level %d> pi \"%s\" = \"%s\"", SoundTouchXMLParser::tag, params.depth, params.elemName.c_str(),
+            //           params.attrVal.c_str() );
           default:
             break;
         }
@@ -187,7 +182,7 @@ namespace soundtouch
     switch ( p.depth )
     {
       case 0:
-        elog.log( DEBUG, "%s: <root> element is <%s>", SoundTouchXMLParser::tag, p.elemName.c_str() );
+        // elog.log( DEBUG, "%s: <root> element is <%s>", SoundTouchXMLParser::tag, p.elemName.c_str() );
         p.type = getMessageType( p.elemName );
         // not interesting for me
         p.isError = ( p.type == WS_UNKNOWN );
@@ -197,7 +192,7 @@ namespace soundtouch
         }
         break;
       case 1:
-        elog.log( DEBUG, "%s: <level 1> element update type is <%s>...", SoundTouchXMLParser::tag, p.elemName.c_str() );
+        // elog.log( DEBUG, "%s: <level 1> element update type is <%s>...", SoundTouchXMLParser::tag, p.elemName.c_str() );
         if ( p.type == WS_UPDATES )
         {
           switch ( getUpdateType( p.elemName ) )
@@ -221,27 +216,27 @@ namespace soundtouch
               p.updatePtr = new SoundTouchZoneUpdate();
               break;
             case MSG_UPDATE_RECENTS:
-              elog.log( DEBUG, "%s: ignore recents update!", SoundTouchXMLParser::tag );
+              // elog.log( DEBUG, "%s: ignore recents update!", SoundTouchXMLParser::tag );
             default:
               if ( p.updatePtr )
               {
                 free( p.updatePtr );
                 p.updatePtr = nullptr;
               }
-              elog.log( INFO, "%s: <level 1> element update type <%s> not implemented (yet?)...", SoundTouchXMLParser::tag,
-                        p.elemName.c_str() );
+              // elog.log( INFO, "%s: <level 1> element update type <%s> not implemented (yet?)...", SoundTouchXMLParser::tag,
+              //           p.elemName.c_str() );
               break;
           }
         }
         break;
       case 2:
-        elog.log( DEBUG, "%s: <level 2> element update property <%s>...", SoundTouchXMLParser::tag, p.elemName.c_str() );
+        // elog.log( DEBUG, "%s: <level 2> element update property <%s>...", SoundTouchXMLParser::tag, p.elemName.c_str() );
         if ( p.updatePtr )
         {
           switch ( p.updatePtr->getUpdateType() )
           {
             case MSG_UPDATE_ZONE:
-              elog.log( DEBUG, "%s: <level 2> await attribute for zone master...", SoundTouchXMLParser::tag );
+              // elog.log( DEBUG, "%s: <level 2> await attribute for zone master...", SoundTouchXMLParser::tag );
               p.updatePtr->isValid = true;
               // await attribute ipaddr
               break;
@@ -251,7 +246,7 @@ namespace soundtouch
         }
         break;
       case 3:
-        elog.log( DEBUG, "%s: <level 3> element property.sub <%s>...", SoundTouchXMLParser::tag, p.elemName.c_str() );
+        // elog.log( DEBUG, "%s: <level 3> element property.sub <%s>...", SoundTouchXMLParser::tag, p.elemName.c_str() );
         if ( p.updatePtr )
         {
           switch ( p.updatePtr->getUpdateType() )
@@ -263,7 +258,7 @@ namespace soundtouch
               // setNowPlayingMessageSubPropertys( p.updatePtr, p.elemName, p.attrVal );
               break;
             case MSG_UPDATE_ZONE:
-              elog.log( DEBUG, "%s: <level 2> await attribute for member...", SoundTouchXMLParser::tag );
+              // elog.log( DEBUG, "%s: <level 2> await attribute for member...", SoundTouchXMLParser::tag );
               if ( p.zoneMember )
                 free( p.zoneMember );
               p.zoneMember = new SoundTouchZoneMember;
@@ -275,14 +270,15 @@ namespace soundtouch
                 free( p.updatePtr );
                 p.updatePtr = nullptr;
               }
-              elog.log( INFO, "%s: <level 3> element property.sub <%s> not implemented (yet?)...", SoundTouchXMLParser::tag,
-                        p.elemName.c_str() );
+              // elog.log( INFO, "%s: <level 3> element property.sub <%s> not implemented (yet?)...", SoundTouchXMLParser::tag,
+              //           p.elemName.c_str() );
               break;
           }
         }
         break;
       case 4:
-        elog.log( DEBUG, "%s: <level 4> element property.sub <%s>...", SoundTouchXMLParser::tag, p.elemName.c_str() );
+        // elog.log( DEBUG, "%s: <level 4> element property.sub <%s>...", SoundTouchXMLParser::tag, p.elemName.c_str() );
+        break;
     }
   }
 
@@ -300,8 +296,8 @@ namespace soundtouch
           {
             case MSG_UPDATE_ZONE:
               // zone member is an attribute
-              elog.log( DEBUG, "%s: <level 3> content  \"%s\" = \"%s\"...", SoundTouchXMLParser::tag, p.elemName.c_str(),
-                        p.attrVal.c_str() );
+              // elog.log( DEBUG, "%s: <level 3> content  \"%s\" = \"%s\"...", SoundTouchXMLParser::tag, p.elemName.c_str(),
+              //           p.attrVal.c_str() );
               //
               // fill in in message
               //
@@ -313,8 +309,8 @@ namespace soundtouch
               static_cast< SoundTouchZoneUpdate * >( p.updatePtr )->isValid = true;
               free( p.zoneMember );
               p.zoneMember = nullptr;
-              elog.log( DEBUG, "%s: zonemembers: %d", SoundTouchXMLParser::tag,
-                        static_cast< SoundTouchZoneUpdate * >( p.updatePtr )->members.size() );
+              // elog.log( DEBUG, "%s: zonemembers: %d", SoundTouchXMLParser::tag,
+              //           static_cast< SoundTouchZoneUpdate * >( p.updatePtr )->members.size() );
               break;
             case MSG_UPDATE_NOW_PLAYING_CHANGED:
               setNowPlayingMessageSubPropertys( p.updatePtr, p.elemName, p.attrVal );
@@ -346,8 +342,8 @@ namespace soundtouch
     switch ( p.depth - 1 )
     {
       case 0:
-        elog.log( DEBUG, "%s: <root> attrib \"%s/%s\" = \"%s\"", SoundTouchXMLParser::tag, p.elemName.c_str(), p.attrName.c_str(),
-                  p.attrVal.c_str() );
+        // elog.log( DEBUG, "%s: <root> attrib \"%s/%s\" = \"%s\"", SoundTouchXMLParser::tag, p.elemName.c_str(), p.attrName.c_str(),
+        //           p.attrVal.c_str() );
         if ( p.attrName.equals( UPDATE_PROPERTY_ATTR_DEVICE_ID ) )
         {
           p.deviceID = p.attrVal;
@@ -362,16 +358,16 @@ namespace soundtouch
           if ( p.elemName.equals( UPDATE_PROPERTY_ZONE_ZONE ) && p.attrName.equals( UPDATE_PROPERTY_ZONE_ATTRIB_MASTER ) )
           {
             static_cast< SoundTouchZoneUpdate * >( p.updatePtr )->masterID = p.attrVal;
-            elog.log( DEBUG, "%s: <level 2> attrib \"%s/%s\" = \"%s\"", SoundTouchXMLParser::tag, p.elemName.c_str(),
-                      p.attrName.c_str(), p.attrVal.c_str() );
+            // elog.log( DEBUG, "%s: <level 2> attrib \"%s/%s\" = \"%s\"", SoundTouchXMLParser::tag, p.elemName.c_str(),
+            //           p.attrName.c_str(), p.attrVal.c_str() );
           }
           //
           // is there an attrib "source" in elem nowPlaying?
           //
           if ( p.elemName.equals( UPDATE_PROPERTY_NPLAY_NOW_PLAYING ) && p.attrName.equals( UPDATE_PROPERTY_ATTR_SOURCE ) )
           {
-            elog.log( DEBUG, "%s: <level 2> attrib \"%s/%s\" = \"%s\"", SoundTouchXMLParser::tag, p.elemName.c_str(),
-                      p.attrName.c_str(), p.attrVal.c_str() );
+            // elog.log( DEBUG, "%s: <level 2> attrib \"%s/%s\" = \"%s\"", SoundTouchXMLParser::tag, p.elemName.c_str(),
+            //           p.attrName.c_str(), p.attrVal.c_str() );
             static_cast< SoundTouchNowPlayingUpdate * >( p.updatePtr )->source = p.attrVal;
             if ( p.attrVal.equals( UPDATE_PROPERTY_NPLAY_PLAYSTATE_STANDBY ) )
             {
@@ -388,8 +384,8 @@ namespace soundtouch
           {
             case MSG_UPDATE_ZONE:
               // zone member is an attribute
-              elog.log( DEBUG, "%s: <level 3> attr  \"%s/%s\" = \"%s\"...", SoundTouchXMLParser::tag, p.elemName.c_str(),
-                        p.attrName.c_str(), p.attrVal.c_str() );
+              // elog.log( DEBUG, "%s: <level 3> attr  \"%s/%s\" = \"%s\"...", SoundTouchXMLParser::tag, p.elemName.c_str(),
+              //           p.attrName.c_str(), p.attrVal.c_str() );
               if ( p.zoneMember )
               {
                 IPAddress addr;
@@ -404,8 +400,9 @@ namespace soundtouch
         }
         break;
       case 4:
-        elog.log( DEBUG, "%s: <level 4> attrib \"%s/%s\" = \"%s\"", SoundTouchXMLParser::tag, p.elemName.c_str(), p.attrName.c_str(),
-                  p.attrVal.c_str() );
+        // elog.log( DEBUG, "%s: <level 4> attrib \"%s/%s\" = \"%s\"", SoundTouchXMLParser::tag, p.elemName.c_str(),
+        // p.attrName.c_str(),
+        //           p.attrVal.c_str() );
         break;
     }
   }

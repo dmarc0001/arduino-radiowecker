@@ -113,7 +113,7 @@ std::shared_ptr< soundtouch::SoundTouchAlert > doTestThingsIfOnline()
   //
   AlertEntry alert;
   alert.name = "Testalert";                                  //! name of the alert
-  alert.volume = 16;                                         //! volume to weak up
+  alert.volume = 22;                                         //! volume to weak up
   alert.location = "";                                       //! have to read in manual api
   alert.source = "PRESET_1";                                 //! preset or string to source
   alert.raiseVol = true;                                     //! should volume raisng on? down
@@ -214,7 +214,7 @@ void testLoop( std::shared_ptr< soundtouch::SoundTouchAlert > testAlert )
       {
         // timeout!
         elog.log( ERROR, "main: device running TIMEOUT or Alert aborted" );
-        delay( 2000 );  //! DEBUG: debug
+        delay( 20 );  //! DEBUG: debug
         testAlert.reset();
         return;
       }
