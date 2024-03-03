@@ -16,12 +16,14 @@ namespace alarmclock
     private:
     static const char *tag;
     static bool isRunning;
-    static soundtouch::SoundTouchAlertListPtr acticeAlertList;
+    static soundtouch::SoundTouchAlertPtrList activeAlertList;
 
     public:
     static void start();
 
     private:
     static void alTask( void * );
+    static bool startAlert( AlertEntryPtr );
+    static bool alertLoop( soundtouch::SoundTouchAlertPtr );
   };
 }  // namespace alarmclock

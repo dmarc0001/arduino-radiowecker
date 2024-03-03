@@ -14,21 +14,21 @@ namespace soundtouch
 {
   class SoundTouchAlert;
 
-  using SoundTouchAlertList = std::vector< SoundTouchAlert >;
-  using SoundTouchAlertListPtr = std::shared_ptr< SoundTouchAlertList >;
+  using SoundTouchAlertPtr = std::shared_ptr< SoundTouchAlert >;
+  using SoundTouchAlertPtrList = std::vector< SoundTouchAlertPtr >;
 
   class SoundTouchAlert
   {
     private:
-    static const char *tag;                               //! tag for messages
-    bool isInit;                                          //! was device initialized
-    uint8_t oldVolume;                                    //! save old volume
-    std::shared_ptr< SoundTouchDevice > sdDevice;         //! device object
-    std::shared_ptr< alarmclock::AlertEntry > alertEntr;  //! alert data obkject
-    SoundTouchAlert();                                    //! private constructor, not able to instance
+    static const char *tag;               //! tag for messages
+    bool isInit;                          //! was device initialized
+    uint8_t oldVolume;                    //! save old volume
+    SoundTouchDevicePtr sdDevice;         //! sd device object
+    alarmclock::AlertEntryPtr alertEntr;  //! alert data obkject
+    SoundTouchAlert();                    //! private constructor, not able to instance
 
     public:
-    explicit SoundTouchAlert( alarmclock::DeviceEntry &, alarmclock::AlertEntry & );
+    explicit SoundTouchAlert( SoundTouchDevicePtr , alarmclock::AlertEntryPtr );
     ~SoundTouchAlert();                                  //! destructor
     bool init();                                         //! init device
     SoundTouchDeviceRunningMode getDeviceRunningMode();  //! runmode from device

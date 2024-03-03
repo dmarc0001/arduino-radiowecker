@@ -19,7 +19,7 @@ namespace soundtouch
   /**
    * constructor, must habe an reference to an soundtouch device
    */
-  SoundTouchDevice::SoundTouchDevice( alarmclock::DeviceEntry &_device ) : device( _device )
+  SoundTouchDevice::SoundTouchDevice( alarmclock::DeviceEntryPtr _device ) : device( _device )
   {
     //
     // create an instance and  a instance id
@@ -48,7 +48,7 @@ namespace soundtouch
     // Connect to server
     //
     char buffer[ 49 ];
-    snprintf( buffer, 48, "ws://%s:%d\0", device.addr.toString().c_str(), device.wsPort );
+    snprintf( buffer, 48, "ws://%s:%d\0", device->addr.toString().c_str(), device->wsPort );
     String interfaceString( buffer );
     elog.log( INFO, "%s: connect websocket to <%s>", SoundTouchDevice::tag, interfaceString.c_str() );
     //
@@ -147,7 +147,7 @@ namespace soundtouch
         // and than put it in the decoder queue
         //
         String msg = "<updates deviceID=\"";
-        msg += device.id;
+        msg += device->id;
         msg += "\">";
         msg += "<nowPlayingUpdated>";
         msg += payload.substring( idx + 2 );
@@ -202,7 +202,7 @@ namespace soundtouch
         // and than put it in the decoder queue
         //
         String msg = "<updates deviceID=\"";
-        msg += device.id;
+        msg += device->id;
         msg += "\"><zoneUpdated>";
         msg += payload.substring( idx + 2 );
         msg += "</zoneUpdated></updates>";
@@ -257,7 +257,7 @@ namespace soundtouch
         // and than put it in the decoder queue
         //
         String msg = "<updates deviceID=\"";
-        msg += device.id;
+        msg += device->id;
         msg += "\"><volumeUpdated>";
         msg += payload.substring( idx + 2 );
         msg += "</volumeUpdated></updates>";
@@ -393,9 +393,9 @@ namespace soundtouch
     String questionString;
 
     questionString = "http://";
-    questionString += device.addr.toString();
+    questionString += device->addr.toString();
     questionString += ":";
-    questionString += device.webPort;
+    questionString += device->webPort;
     questionString += _command;
     return questionString;
   }

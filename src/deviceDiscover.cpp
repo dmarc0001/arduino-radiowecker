@@ -37,7 +37,7 @@ namespace soundtouch
    */
   void DeviceDiscover::discoverTask( void * )
   {
-    static const char *tag{"discovertask"};
+    static const char *tag{ "discovertask" };
     int64_t nextTimeDiscover{ esp_timer_get_time() + getMicrosForMiliSec( NEXT_TIME_DISCOVER_SHORT ) };
     int64_t nextTimeMDNSCheck{ esp_timer_get_time() + getMicrosForMiliSec( NEXT_TIME_MDNS_SHORT ) };
     WlanState oldConnectionState{ WlanState::DISCONNECTED };
@@ -119,7 +119,8 @@ namespace soundtouch
       if ( nextMark < esp_timer_get_time() )
       {
         elog.log( DEBUG, "%s: ==== MARK ====", tag );
-        nextMark = esp_timer_get_time() + getMicrosForMiliSec( appprefs::TASK_MARK_INTERVAL_MS + static_cast< int32_t >( random( 2000 ) ) );
+        nextMark =
+            esp_timer_get_time() + getMicrosForMiliSec( appprefs::TASK_MARK_INTERVAL_MS + static_cast< int32_t >( random( 2000 ) ) );
       }
 
       yield();
@@ -193,7 +194,7 @@ namespace soundtouch
   DevListPtr DeviceDiscover::discoverSoundTouchDevices()
   {
     mdns_result_t *results;
-    DevListPtr devListPtr = std::make_shared< DevList >();
+    DevListPtr devListPtr = std::make_shared< DeviceEntrPtrList >();
 
     esp_err_t err = mdns_query_ptr( "_soundtouch", "_tcp", 3000, 20, &results );
     if ( err )
@@ -218,19 +219,19 @@ namespace soundtouch
     //
     for ( int idx = 0; idx < resultIdx; ++idx )
     {
-      DeviceEntry devEntry;
+      DeviceEntryPtr devEntry = std::make_shared< DeviceEntry >();
       mdns_result_t *currResult = DeviceDiscover::getResult( results, idx );
       if ( !currResult )
       {
         elog.log( ERROR, "%s: mDNS not found a result on index <%d>!", DeviceDiscover::tag, idx );
         continue;
       }
-      devEntry.addr = DeviceDiscover::getIP( currResult );
-      devEntry.webPort = currResult->port;
-      devEntry.wsPort = 8080;
-      devEntry.name = String( currResult->instance_name );
-      elog.log( DEBUG, "%s: device #%d has IPv4 <%s:%d> (instance: %s)", DeviceDiscover::tag, idx, devEntry.addr.toString(),
-                devEntry.webPort, devEntry.name.c_str() );
+      devEntry->addr = DeviceDiscover::getIP( currResult );
+      devEntry->webPort = currResult->port;
+      devEntry->wsPort = 8080;
+      devEntry->name = String( currResult->instance_name );
+      elog.log( DEBUG, "%s: device #%d has IPv4 <%s:%d> (instance: %s)", DeviceDiscover::tag, idx, devEntry->addr.toString(),
+                devEntry->webPort, devEntry->name.c_str() );
       // how many text entrys are there
       int textNum = static_cast< int >( currResult->txt_count );
       for ( int txIdx = 0; txIdx < textNum; ++txIdx )
@@ -242,9 +243,9 @@ namespace soundtouch
         String key( textPair.key );
         String val( textPair.value );
         if ( key.equals( "DESCRIPTION" ) )
-          devEntry.type = val;
+          devEntry->type = val;
         else if ( key.equals( "MAC" ) )
-          devEntry.id = val;
+          devEntry->id = val;
         delay( 1 );
       }
       devListPtr->push_back( devEntry );

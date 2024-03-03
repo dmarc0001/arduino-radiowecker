@@ -68,21 +68,28 @@ void setup()
   WifiConfig::init();
   elog.log( INFO, "%s: read startup config...", tag );
   AlertConfObj::readConfig();
+  //
+  // DEBUG: testalert add
+  //
+  addTestAlert();
+  //
+  // DEBUG: terstalert add
+  //
   elog.log( DEBUG, "%s: start alert task...", tag );
   AlertTask::start();
   DeviceDiscover::init();
 }
 
-std::shared_ptr< soundtouch::SoundTouchAlert > doTestThingsIfOnline()
+void addTestAlert()
 {
   using namespace alarmclock;
   using namespace logger;
-  const char *tag{ "test" };
+  const char *tag{ "testalert" };
 
   //
   // step 1, create and init a soundTouch device
   //
-  elog.log( DEBUG, "%s: start soundtouch alert with device...", tag );
+  elog.log( DEBUG, "%s: create soundtouch testalert alert with device...", tag );
   using namespace soundtouch;
   using namespace alarmclock;
   DeviceEntry device;
@@ -94,12 +101,13 @@ std::shared_ptr< soundtouch::SoundTouchAlert > doTestThingsIfOnline()
   device.webPort = 8090;
   device.wsPort = 8080;
   device.type = String( "Soundtouch" );
-  device.note = String( "bemerkung" );
+  device.note = String( "TESTALERTDEVICE" );
 
   //
   // i want to make the alert in two minutes after reset
   //
-  time_t now = time( nullptr );
+  time_t now;
+  time( &now );
   tm *lt = localtime( &now );
   if ( lt->tm_min > 57 )
   {
@@ -111,42 +119,29 @@ std::shared_ptr< soundtouch::SoundTouchAlert > doTestThingsIfOnline()
     lt->tm_min += 2;
   }
   //
-  AlertEntry alert;
-  alert.name = "Testalert";                                  //! name of the alert
-  alert.volume = 22;                                         //! volume to weak up
-  alert.location = "";                                       //! have to read in manual api
-  alert.source = "PRESET_1";                                 //! preset or string to source
-  alert.raiseVol = true;                                     //! should volume raisng on? down
-  alert.duration = 120;                                      //! length in secounds
-  alert.days = { mo, tu, we, tu, fr, sa, su };               //! if present, days to alert
-  alert.devices.push_back( device.id );                      //! which devices?
-  alert.enable = true;                                       //! alert enable?
-  alert.note = "Test alert 001";                             //! user note (cause etc)
-  alert.alertHour = static_cast< uint8_t >( lt->tm_min );    //! which hour wake up
-  alert.alertMinute = static_cast< uint8_t >( lt->tm_min );  //! which minute wake up
-                                                             // uint8_t day;                //! if on a day, day number (1-31)
-                                                             // uint8_t month;              //! if on day, month number (1-12)
+  // create testalert
+  //
+  AlertEntryPtr alert = std::make_shared< AlertEntry >();
+  alert->name = "alert_00";                                   //! name of the alert
+  alert->volume = 22;                                         //! volume to weak up
+  alert->location = "";                                       //! have to read in manual api
+  alert->source = "PRESET_1";                                 //! preset or string to source
+  alert->raiseVol = true;                                     //! should volume raisng on? down
+  alert->duration = 120;                                      //! length in secounds
+  alert->days = { mo, tu, we, tu, fr, sa, su };               //! if present, days to alert
+  alert->devices.push_back( device.id );                      //! which devices?
+  alert->enable = true;                                       //! alert enable?
+  alert->note = "Test alert 001";                             //! user note (cause etc)
+  alert->alertHour = static_cast< uint8_t >( lt->tm_min );    //! which hour wake up
+  alert->alertMinute = static_cast< uint8_t >( lt->tm_min );  //! which minute wake up
+                                                              // uint8_t day;                //! if on a day, day number (1-31)
+                                                              // uint8_t month;              //! if on day, month number (1-12)
+                                                              //
 
   //
-  // create the device object
+  // put alert in current List
   //
-  std::shared_ptr< SoundTouchAlert > testAlert = std::make_shared< SoundTouchAlert >( device, alert );
-  //
-  if ( testAlert->init() )
-  {
-    // init was okay
-    return testAlert;
-  }
-  return nullptr;
-}
-
-void doTestThingsIfOffline( std::shared_ptr< soundtouch::SoundTouchAlert > testAlert )
-{
-  using namespace alarmclock;
-  using namespace logger;
-  const char *tag{ "test" };
-  elog.log( DEBUG, "%s: delete soundtouch alert...", tag );
-  testAlert.reset();
+  StatusObject::alertList.push_back( alert );
 }
 
 void testLoop( std::shared_ptr< soundtouch::SoundTouchAlert > testAlert )
@@ -232,9 +227,7 @@ void loop()
 
   // next time logger time sync
   static int64_t setNextTimeCorrect{ ( esp_timer_get_time() + getMicrosForSec( 21600 ) ) };
-  static int64_t setNextTimeTestLoop{ ( esp_timer_get_time() + getMicrosForMiliSec( 1503 ) ) };
   static auto connected = WlanState::DISCONNECTED;
-  static std::shared_ptr< soundtouch::SoundTouchAlert > testAlert;
   //
   // for webserver
   //
@@ -274,9 +267,6 @@ void loop()
         // it was with connection, now without
         elog.log( WARNING, "main: ip connectivity lost, stop webserver." );
         // TODO: EnvWebServer::stop();
-        if ( testAlert )
-          doTestThingsIfOffline( testAlert );
-        testAlert = nullptr;
         break;
       case WlanState::CONNECTED:
         elog.log( INFO, "main: ip connectivity found, start webserver." );
@@ -284,26 +274,10 @@ void loop()
         break;
       case WlanState::TIMESYNCED:
         elog.log( INFO, "main: timesynced. enable alerts..." );
-        if ( !testAlert )
-        {
-          testAlert = doTestThingsIfOnline();
-          if ( testAlert )
-          {
-            elog.log( INFO, "main::loop: okay while soundtouch device (get infos)..." );
-          }
-        }
         break;
     }
     // mark new value
     connected = new_connected;
-  }
-  //
-  // testloop if nessesary
-  //
-  if ( testAlert && ( setNextTimeTestLoop < esp_timer_get_time() ) )
-  {
-    setNextTimeTestLoop = esp_timer_get_time() + getMicrosForMiliSec( 600 );
-    testLoop( testAlert );
   }
   yield();
 }

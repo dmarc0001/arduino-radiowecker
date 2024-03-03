@@ -35,17 +35,19 @@ namespace alarmclock
    */
   enum AlertDays : uint8_t
   {
-    mo,
-    tu,
-    we,
-    th,
-    fr,
-    sa,
-    su
+    mo = 0,
+    tu = 1,
+    we = 2,
+    th = 3,
+    fr = 4,
+    sa = 5,
+    su = 6
   };
 
-  using AlRecordList = std::vector< AlertEntry >;
-  using DevList = std::vector< DeviceEntry >;
+  using AlertEntryPtr = std::shared_ptr< AlertEntry >;
+  using AlRecordList = std::vector< AlertEntryPtr >;
+  using DeviceEntryPtr = std::shared_ptr< DeviceEntry >;
+  using DeviceEntrPtrList = std::vector< DeviceEntryPtr >;
   using AlertDayList = std::vector< AlertDays >;
   using AlertDeviceIdList = std::vector< String >;
 
@@ -80,12 +82,13 @@ namespace alarmclock
     AlertDayList days;          //! if present, days to alert
     AlertDeviceIdList devices;  //! which devices?
     String type;                //! read manual
-    bool enable;                //! alert enable?
+    bool enable{ false };       //! alert enable?
     String note;                //! user note (cause etc)
     uint8_t alertHour;          //! which hour wake up
     uint8_t alertMinute;        //! which minute wake up
-    uint8_t day;                //! if on a day, day number (1-31)
-    uint8_t month;              //! if on day, month number (1-12)
+    uint8_t day{ 255 };         //! if on a day, day number (1-31)
+    uint8_t month{ 255 };       //! if on day, month number (1-12)
+    bool inUse{ false };        //! an alert is running
   };
 
 }  // namespace alarmclock

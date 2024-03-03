@@ -18,6 +18,7 @@ namespace soundtouch
 
   using InstancePtr = std::pair< uint32_t, SoundTouchDevice * >;
   using InstancesList = std::vector< InstancePtr >;
+  using SoundTouchDevicePtr = std::shared_ptr< SoundTouchDevice >;
   using SoundTouchXMLParserPtr = std::unique_ptr< SoundTouchXMLParser >;
 
   class SoundTouchDevice
@@ -31,7 +32,7 @@ namespace soundtouch
     static InstancesList instList;
     SoundTouchDeviceRunningMode runMode;
     WebsocketsClient wsClient;
-    alarmclock::DeviceEntry device;
+    alarmclock::DeviceEntryPtr device;
     SoundTouchDeviceState currentState;
     XmlMessageList xmlList;
     DecodetMessageList msgList;
@@ -40,7 +41,7 @@ namespace soundtouch
     SoundTouchDevice();  //! no default constructor!
 
     public:
-    explicit SoundTouchDevice( alarmclock::DeviceEntry & );
+    explicit SoundTouchDevice( alarmclock::DeviceEntryPtr );
     ~SoundTouchDevice();
     bool getDeviceInfos();  //! get device Infos for current State
     bool setCurrentVolume( uint8_t, bool _mute = false );

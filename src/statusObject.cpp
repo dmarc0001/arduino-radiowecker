@@ -17,7 +17,7 @@ namespace alarmclock
   volatile WlanState StatusObject::wlanState{ WlanState::DISCONNECTED };
   volatile bool StatusObject::http_active{ false };
   AlRecordList StatusObject::alertList;
-  DevList StatusObject::devList;
+  DeviceEntrPtrList StatusObject::devList;
 
   SemaphoreHandle_t StatusObject::configFileSem{ nullptr };
 

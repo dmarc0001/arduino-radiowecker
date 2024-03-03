@@ -21,7 +21,7 @@ namespace alarmclock
 
     public:
     static AlRecordList alertList;           //! list of alerts (read from file)
-    static DevList devList;                  //! list from devices, read from nDNS
+    static DeviceEntrPtrList devList;        //! list from devices, read from nDNS
     static SemaphoreHandle_t configFileSem;  // is access to files busy
 
     public:

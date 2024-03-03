@@ -11,11 +11,11 @@ namespace soundtouch
   /**
    * construct the object
    */
-  SoundTouchAlert::SoundTouchAlert( alarmclock::DeviceEntry &_device, alarmclock::AlertEntry &_alert ) : isInit( false )
+  SoundTouchAlert::SoundTouchAlert( SoundTouchDevicePtr _device, alarmclock::AlertEntryPtr _alertEntr )
+      : isInit( false ), sdDevice( _device ), alertEntr( _alertEntr )
   {
     elog.log( DEBUG, "%s: create soundtouch alert instance", SoundTouchAlert::tag );
-    sdDevice = std::make_shared< SoundTouchDevice >( _device );
-    alertEntr = std::make_shared< alarmclock::AlertEntry >( _alert );
+    alertEntr->inUse = true;
   }
 
   /**
@@ -23,6 +23,7 @@ namespace soundtouch
    */
   SoundTouchAlert::~SoundTouchAlert()
   {
+    alertEntr->inUse = false;
     elog.log( DEBUG, "%s: delete soundtouch alert instance", SoundTouchAlert::tag );
   }
 

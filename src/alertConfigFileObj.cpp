@@ -42,35 +42,52 @@ namespace alarmclock
         //
         // every element
         //
-        AlertEntry entry;
-        entry.name = AlertConfObj::getValueFromJsonObj( "name", elem );
-        elog.log( DEBUG, "%s: alert <%s>...", AlertConfObj::tag, entry.name.c_str() );
-        entry.volume = static_cast< uint8_t >( AlertConfObj::getValueFromJsonObj( "volume", elem ).toInt() );
-        entry.location = AlertConfObj::getValueFromJsonObj( "location", elem );
-        entry.source = AlertConfObj::getValueFromJsonObj( "source", elem );
-        entry.raiseVol = ( AlertConfObj::getValueFromJsonObj( "raise", elem ).compareTo( "true" ) == 1 ) ? true : false;
-        entry.duration = static_cast< uint16_t >( AlertConfObj::getValueFromJsonObj( "duration", elem ).toInt() );
-        entry.sourceAccount = AlertConfObj::getValueFromJsonObj( "account", elem );
-        entry.type = AlertConfObj::getValueFromJsonObj( "type", elem );
-        entry.enable = ( AlertConfObj::getValueFromJsonObj( "enable", elem ).compareTo( "true" ) == 1 ) ? true : false;
-        entry.note = AlertConfObj::getValueFromJsonObj( "note", elem );
-        entry.alertHour = static_cast< uint8_t >( AlertConfObj::getValueFromJsonObj( "hour", elem ).toInt() );
-        entry.alertMinute = static_cast< uint8_t >( AlertConfObj::getValueFromJsonObj( "minute", elem ).toInt() );
-        entry.day = static_cast< uint8_t >( AlertConfObj::getValueFromJsonObj( "dateday", elem ).toInt() );
-        entry.month = static_cast< uint8_t >( AlertConfObj::getValueFromJsonObj( "datemonth", elem ).toInt() );
+        AlertEntryPtr entry = std::make_shared< AlertEntry >();
+        entry->name = AlertConfObj::getValueFromJsonObj( "name", elem );
+        elog.log( DEBUG, "%s: alert <%s>...", AlertConfObj::tag, entry->name.c_str() );
+        entry->volume = static_cast< uint8_t >( AlertConfObj::getValueFromJsonObj( "volume", elem ).toInt() );
+        entry->location = AlertConfObj::getValueFromJsonObj( "location", elem );
+        entry->source = AlertConfObj::getValueFromJsonObj( "source", elem );
+        entry->raiseVol = ( AlertConfObj::getValueFromJsonObj( "raise", elem ).compareTo( "true" ) == 1 ) ? true : false;
+        entry->duration = static_cast< uint16_t >( AlertConfObj::getValueFromJsonObj( "duration", elem ).toInt() );
+        entry->sourceAccount = AlertConfObj::getValueFromJsonObj( "account", elem );
+        entry->type = AlertConfObj::getValueFromJsonObj( "type", elem );
+        entry->enable = ( AlertConfObj::getValueFromJsonObj( "enable", elem ).compareTo( "true" ) == 1 ) ? true : false;
+        entry->note = AlertConfObj::getValueFromJsonObj( "note", elem );
+        entry->alertHour = static_cast< uint8_t >( AlertConfObj::getValueFromJsonObj( "hour", elem ).toInt() );
+        entry->alertMinute = static_cast< uint8_t >( AlertConfObj::getValueFromJsonObj( "minute", elem ).toInt() );
+        //
+        // day/month 255 or value from entry
+        //
+        if ( AlertConfObj::getValueFromJsonObj( "dateday", elem ).isEmpty() )
+        {
+          entry->day = 255;
+        }
+        else
+        {
+          entry->day = static_cast< uint8_t >( AlertConfObj::getValueFromJsonObj( "dateday", elem ).toInt() );
+        }
+        if ( AlertConfObj::getValueFromJsonObj( "datemonth", elem ).isEmpty() )
+        {
+          entry->month = 255;
+        }
+        else
+        {
+          entry->month = static_cast< uint8_t >( AlertConfObj::getValueFromJsonObj( "datemonth", elem ).toInt() );
+        }
         //
         // a little special
         // string with comma to vactor of enum
         //
         String alertDaysListStr = AlertConfObj::getValueFromJsonObj( "days", elem );
-        entry.days = AlertConfObj::getAlertDaysList( alertDaysListStr );
+        entry->days = AlertConfObj::getAlertDaysList( alertDaysListStr );
         //
         // also special
         // string with comma to vector of devices
         // not validation of the devices yet
         //
         String alertDevicesListStr = AlertConfObj::getValueFromJsonObj( "devices", elem );
-        entry.devices = AlertConfObj::getDevicesListForAlert( alertDevicesListStr );
+        entry->devices = AlertConfObj::getDevicesListForAlert( alertDevicesListStr );
         StatusObject::alertList.push_back( entry );
         delay( 60 );
       }
@@ -115,18 +132,18 @@ namespace alarmclock
       cJSON *elem;
       cJSON_ArrayForEach( elem, jsonObject )
       {
-        alarmclock::DeviceEntry devElem;
+        DeviceEntryPtr devElem = std::make_shared< DeviceEntry >();
         //
         // every element
         //
-        devElem.name = AlertConfObj::getValueFromJsonObj( "name", elem );
-        elog.log( DEBUG, "%s: found device name <%s>...", AlertConfObj::tag, devElem.name.c_str() );
-        devElem.addr.fromString( AlertConfObj::getValueFromJsonObj( "ip", elem ) );
-        devElem.id = AlertConfObj::getValueFromJsonObj( "id", elem );
-        devElem.webPort = static_cast< uint16_t >( AlertConfObj::getValueFromJsonObj( "webport", elem ).toInt() );
-        devElem.wsPort = static_cast< uint16_t >( AlertConfObj::getValueFromJsonObj( "wsport", elem ).toInt() );
-        devElem.type = AlertConfObj::getValueFromJsonObj( "type", elem );
-        devElem.note = AlertConfObj::getValueFromJsonObj( "note", elem );
+        devElem->name = AlertConfObj::getValueFromJsonObj( "name", elem );
+        elog.log( DEBUG, "%s: found device name <%s>...", AlertConfObj::tag, devElem->name.c_str() );
+        devElem->addr.fromString( AlertConfObj::getValueFromJsonObj( "ip", elem ) );
+        devElem->id = AlertConfObj::getValueFromJsonObj( "id", elem );
+        devElem->webPort = static_cast< uint16_t >( AlertConfObj::getValueFromJsonObj( "webport", elem ).toInt() );
+        devElem->wsPort = static_cast< uint16_t >( AlertConfObj::getValueFromJsonObj( "wsport", elem ).toInt() );
+        devElem->type = AlertConfObj::getValueFromJsonObj( "type", elem );
+        devElem->note = AlertConfObj::getValueFromJsonObj( "note", elem );
         StatusObject::devList.push_back( devElem );
         delay( 100 );
       }
