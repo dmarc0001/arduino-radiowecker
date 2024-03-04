@@ -4,7 +4,7 @@
 #include <freertos/task.h>
 #include "soundTouchDefs.hpp"
 
-namespace alarmclock
+namespace alertclock
 {
   // previous Declaration
   class AlertEntry;
@@ -91,4 +91,4 @@ namespace alarmclock
     bool inUse{ false };        //! an alert is running
   };
 
-}  // namespace alarmclock
+}  // namespace alertclock

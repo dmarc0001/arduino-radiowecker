@@ -8,7 +8,7 @@
 #include "statics.hpp"
 #include "statusObject.hpp"
 
-namespace alarmclock
+namespace alertclock
 {
   const char *StatusObject::tag{ "statusobj" };
   bool StatusObject::is_init{ false };
@@ -99,4 +99,4 @@ namespace alarmclock
     return StatusObject::http_active;
   }
 
-}  // namespace alarmclock
+}  // namespace alertclock

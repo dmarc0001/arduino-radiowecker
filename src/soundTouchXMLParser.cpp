@@ -5,7 +5,7 @@
 
 namespace soundtouch
 {
-  using namespace alarmclock;
+  using namespace alertclock;
   using namespace logger;
 
   const char *SoundTouchXMLParser::tag{ "xmlparser" };
@@ -188,7 +188,7 @@ namespace soundtouch
         p.isError = ( p.type == WS_UNKNOWN );
         if ( p.isError )
         {
-          elog.log( ERROR, "%s: <root> element is unknown type, abort parsing!", SoundTouchXMLParser::tag );
+          elog.log( ERROR, "%s: <root> element (%s) is unknown type, abort parsing!", SoundTouchXMLParser::tag, p.elemName.c_str() );
         }
         break;
       case 1:
@@ -445,7 +445,7 @@ namespace soundtouch
     {
       // which album is playing
       dev->playStatus = getPlayingType( attrVal );
-      elog.log( ERROR, "%s: PLAYSTATE: %s (%d)", SoundTouchXMLParser::tag, attrVal.c_str(), dev->playStatus );
+      // elog.log( ERROR, "%s: PLAYSTATE: %s (%d)", SoundTouchXMLParser::tag, attrVal.c_str(), dev->playStatus );
       dev->isValid = true;
     }
     else if ( elemName.equals( UPDATE_PROPERTY_NPLAY_STREAMTYPE ) )
@@ -548,6 +548,10 @@ namespace soundtouch
     else if ( _type.equals( MSG_TYPE_USER_UPDATES ) )
     {
       return WS_USER_ACTIVITY_UPDATES;
+    }
+    else if ( _type.equals( MSG_TYPE_SDKINFO ) )
+    {
+      return ( WS_USER_SDK_INFO );
     }
     return WS_UNKNOWN;
   }

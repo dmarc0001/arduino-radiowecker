@@ -11,7 +11,7 @@ namespace soundtouch
   /**
    * construct the object
    */
-  SoundTouchAlert::SoundTouchAlert( SoundTouchDevicePtr _device, alarmclock::AlertEntryPtr _alertEntr )
+  SoundTouchAlert::SoundTouchAlert( SoundTouchDevicePtr _device, alertclock::AlertEntryPtr _alertEntr )
       : isInit( false ), sdDevice( _device ), alertEntr( _alertEntr )
   {
     elog.log( DEBUG, "%s: create soundtouch alert instance", SoundTouchAlert::tag );
@@ -71,71 +71,173 @@ namespace soundtouch
     sdDevice->setDeviceRunningMode( ST_STATE_WAIT_FOR_INIT_COMLETE );
     // save old volume after alaert
     oldVolume = sdDevice->getCurrentVolume();
-    if ( wasOkay && sdDevice->setPower( true ) )
+    wasOkay = sdDevice->setCurrentVolume( 0 );
+    //
+    // power on on implicit when press preset key
+    //
+    if ( wasOkay )
     {
-      wasOkay = sdDevice->setCurrentVolume( 0 );
-      if ( wasOkay )
+      // set source (here only preset)
+      if ( alertEntr->source.startsWith( KEY_PRESET_COMMON ) )
       {
-        // set source (here only preset)
-        if ( alertEntr->source.startsWith( KEY_PRESET_COMMON ) )
-        {
-          //
-          // yes presets are supported!
-          //
-          wasOkay = sdDevice->touchBtn( alertEntr->source );
-          if ( wasOkay )
-            sdDevice->setDeviceRunningMode( ST_STATE_RUNNING_ALERT );
-        }
-        else
-        {
-          wasOkay = false;
-          elog.log( ERROR, "%s: sorry only presets supportet yet!", SoundTouchAlert::tag );
-        }
+        //
+        // yes presets are supported!
+        //
+        wasOkay = sdDevice->touchBtn( alertEntr->source );
+        if ( wasOkay )
+          sdDevice->setDeviceRunningMode( ST_STATE_RUNNING_ALERT );
+        wasOkay = sdDevice->setCurrentVolume( 0 );
+      }
+      else
+      {
+        wasOkay = false;
+        elog.log( ERROR, "%s: sorry only presets supportet yet!", SoundTouchAlert::tag );
       }
     }
     return wasOkay;
   }
 
+  /**
+   * have to call in ca 200ms steps
+   * control the different ststes of the device and alert
+   */
   bool SoundTouchAlert::checkRunningAlert()
   {
-    bool wasOkay{ true };
-    static int64_t nextVoumeStep{ 0LL };
+    WsPlayStatus currPlayState = sdDevice->getPlayState();
     //
     // check if the device is playing
     //
-    if ( ( sdDevice->getPlayState() != BUFFERING_STATE ) && ( sdDevice->getPlayState() != PLAY_STATE ) )
+    if ( ( currPlayState == BUFFERING_STATE ) || ( currPlayState == PLAY_STATE ) )
     {
       //
-      // device not running
+      // device running
       //
-      wasOkay = false;
+      runningAlertWasOkay = true;
+    }
+    //
+    // if the alert time was come?
+    //
+    if ( runningAlertWasOkay && !alertIsStart )
+    {
+      //
+      // if not is start yet, check the time difference
+      //
+      tm localTime{ 0 };
+      if ( !getLocalTime( &localTime ) )
+      {
+        elog.log( CRITICAL, "%s: failed to obtain system time!", SoundTouchAlert::tag );
+        return false;
+      }
+      int secounds_today = ( localTime.tm_hour * 3600 ) + ( localTime.tm_min * 60 ) + localTime.tm_sec;
+      int secounds_alert = ( alertEntr->alertHour * 3600 ) + ( alertEntr->alertMinute * 60 );
+      int secounds_diff = secounds_alert - secounds_today;
+      if ( secounds_diff <= 0 )
+      {
+        // yes its time to tune up the volume
+        alertIsStart = true;
+        // and set the absolute time for alert end
+        elog.log( DEBUG, "%s: alert <%d>duration is <%d> secounds!", SoundTouchAlert::tag, alertEntr->name.c_str(),
+                  alertEntr->duration );
+        runningAlertVolEndTime = esp_timer_get_time() + getMicrosForSec( static_cast< int32_t >( alertEntr->duration ) );
+      }
+      else
+      {
+        // not tune up the volume yet
+        uint8_t currVol = sdDevice->getCurrentVolume();
+        if ( currVol > 0 )
+          sdDevice->setCurrentVolume( 0 );
+        return true;
+      }
     }
     //
     // first check if the volume okay
+    // and if device is playing
     //
-    if ( wasOkay )
+    if ( runningAlertWasOkay && ( sdDevice->getPlayState() == PLAY_STATE ) )
     {
       uint8_t destVol = ( alertEntr->volume > static_cast< uint8_t >( 100U ) ) ? static_cast< uint8_t >( 100 ) : alertEntr->volume;
       uint8_t currVol = sdDevice->getCurrentVolume();
-      if ( destVol > currVol )
+      if ( runningAlertVolEndTime > esp_timer_get_time() )
       {
-        // not too often, it's problematic
-        if ( nextVoumeStep < esp_timer_get_time() )
+        // if the end of the alert is not given
+        if ( destVol > currVol )
         {
           if ( alertEntr->raiseVol )
           {
-            // raise up volume one step
-            wasOkay = sdDevice->touchBtn( KEY_VOL_UP );
+            // not too often, it's problematic
+            if ( runningAlertNextVolStep < esp_timer_get_time() )
+            {
+              //
+              // if the user has via remote make volume down
+              //
+              if ( currVol < runningAlertNextDestVol - 4 )
+              {
+                // then lets the volume so
+                alertEntr->raiseVol = false;
+              }
+              else
+              {
+                // normal volume up to the destination
+                runningAlertNextDestVol = ++currVol;
+                // raise up volume one step
+                runningAlertWasOkay = sdDevice->touchBtn( KEY_VOL_UP );
+                // raise up volume one step
+                // runningAlertWasOkay = sdDevice->touchBtn( KEY_VOL_UP );
+              }
+              runningAlertNextVolStep = esp_timer_get_time() + getMicrosForMiliSec( 800L );
+            }
           }
           else
           {
             // set volume
-            wasOkay = sdDevice->setCurrentVolume( destVol );
+            runningAlertWasOkay = sdDevice->setCurrentVolume( destVol );
           }
-          nextVoumeStep = esp_timer_get_time() + getMicrosForMiliSec( 600L );
         }
       }
     }
-    return wasOkay;
+
+    //
+    // now show, if the alert have to end
+    //
+    if ( runningAlertWasOkay && ( runningAlertVolEndTime < esp_timer_get_time() ) )
+    {
+      // not too often...
+      if ( runningAlertNextVolStep < esp_timer_get_time() )
+      {
+        uint8_t currVol = sdDevice->getCurrentVolume();
+        // tune volume down
+        if ( alertEntr->raiseVol )
+        {
+          // if volume 0 then end the alert
+          if ( currVol == 0 )
+          {
+            //
+            // first power off, its right!
+            //
+            if ( ( currPlayState == BUFFERING_STATE ) || ( currPlayState == PLAY_STATE ) )
+              sdDevice->touchBtn( KEY_POWER );
+            // then the old volume from "before"
+            runningAlertWasOkay = sdDevice->setCurrentVolume( oldVolume );
+            return false;
+          }
+          // else make volume lower
+          runningAlertWasOkay = sdDevice->touchBtn( KEY_VOL_DOWN );
+          runningAlertWasOkay = sdDevice->touchBtn( KEY_VOL_DOWN );
+        }
+        else
+        {
+          //
+          // first power off, its right!
+          //
+          if ( ( currPlayState == BUFFERING_STATE ) || ( currPlayState == PLAY_STATE ) )
+            sdDevice->touchBtn( KEY_POWER );
+          // then the old volume from "before"
+          runningAlertWasOkay = sdDevice->setCurrentVolume( oldVolume );
+          return false;
+        }
+        runningAlertNextVolStep = esp_timer_get_time() + getMicrosForMiliSec( 800L );
+      }
+    }
+    return runningAlertWasOkay;
   }
 }  // namespace soundtouch

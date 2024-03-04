@@ -6,7 +6,7 @@
 namespace soundtouch
 {
   using namespace logger;
-  using namespace alarmclock;
+  using namespace alertclock;
 
   constexpr int32_t NEXT_TIME_MDNS_SHORT = 4000UL;
   constexpr int32_t NEXT_TIME_MDNS = 17000UL;

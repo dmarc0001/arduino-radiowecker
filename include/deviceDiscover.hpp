@@ -10,7 +10,7 @@
 
 namespace soundtouch
 {
-  using DevListPtr = std::shared_ptr< alarmclock::DeviceEntrPtrList >;
+  using DevListPtr = std::shared_ptr< alertclock::DeviceEntrPtrList >;
 
   class DeviceDiscover
   {

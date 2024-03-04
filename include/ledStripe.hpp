@@ -5,7 +5,7 @@
 #include <FastLED.h>
 #include "appPreferences.hpp"
 
-namespace alarmclock
+namespace alertclock
 {
 
   class LEDStripe
@@ -37,4 +37,4 @@ namespace alarmclock
     static int64_t wlanStateLoop( bool * );  //! chcek wlan state
   };
 
-}  // namespace alarmclock
+}  // namespace alertclock

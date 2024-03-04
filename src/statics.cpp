@@ -3,7 +3,7 @@
 #include <WiFiUdp.h>
 
 logger::Elog elog;
-namespace alarmclock
+namespace alertclock
 {
   WiFiUDP udpClient;
-}  // namespace alarmclock
+}  // namespace alertclock

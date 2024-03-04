@@ -9,7 +9,7 @@
 #include "soundTouchDefs.hpp"
 #include "soundTouchAlert.hpp"
 
-namespace alarmclock
+namespace alertclock
 {
   class AlertTask
   {
@@ -26,4 +26,4 @@ namespace alarmclock
     static bool startAlert( AlertEntryPtr );
     static bool alertLoop( soundtouch::SoundTouchAlertPtr );
   };
-}  // namespace alarmclock
+}  // namespace alertclock

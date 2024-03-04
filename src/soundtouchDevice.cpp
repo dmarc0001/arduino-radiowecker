@@ -7,19 +7,19 @@ namespace soundtouch
 {
 
   using namespace websockets;
-  using namespace alarmclock;
+  using namespace alertclock;
   using namespace logger;
 
   const char *SoundTouchDevice::tag{ "soundtouchdev" };
   TaskHandle_t SoundTouchDevice::wsTaskHandle{ nullptr };
   TaskHandle_t SoundTouchDevice::decTaskHandle{ nullptr };
   uint32_t SoundTouchDevice::instances{ 0 };
-  InstancesList SoundTouchDevice::instList;
+  InstancesList SoundTouchDevice::instancesList;
 
   /**
    * constructor, must habe an reference to an soundtouch device
    */
-  SoundTouchDevice::SoundTouchDevice( alarmclock::DeviceEntryPtr _device ) : device( _device )
+  SoundTouchDevice::SoundTouchDevice( alertclock::DeviceEntryPtr _device ) : device( _device )
   {
     //
     // create an instance and  a instance id
@@ -27,7 +27,7 @@ namespace soundtouch
     ++SoundTouchDevice::instances;
     this->instance = SoundTouchDevice::instances;
     InstancePtr myInstance = std::make_pair( this->instance, this );
-    SoundTouchDevice::instList.push_back( myInstance );
+    SoundTouchDevice::instancesList.push_back( myInstance );
     elog.log( INFO, "%s: create Instance: %d", SoundTouchDevice::tag, this->instance );
     http.setReuse( true );  /// keep-alive
     runMode = ST_STATE_UNINITIALIZED;
@@ -71,6 +71,7 @@ namespace soundtouch
    */
   SoundTouchDevice::~SoundTouchDevice()
   {
+    wsClient.close();
     if ( SoundTouchDevice::wsTaskHandle )
     {
       elog.log( INFO, "%s: kill ws-tread instance: %d", SoundTouchDevice::tag, this->instance );
@@ -83,11 +84,11 @@ namespace soundtouch
       vTaskDelete( SoundTouchDevice::decTaskHandle );
       SoundTouchDevice::decTaskHandle = nullptr;
     }
-    for ( auto it = SoundTouchDevice::instList.begin(); it < SoundTouchDevice::instList.end(); it++ )
+    for ( auto it = SoundTouchDevice::instancesList.begin(); it < SoundTouchDevice::instancesList.end(); it++ )
     {
       if ( it->first == this->instance )
       {
-        SoundTouchDevice::instList.erase( it );
+        SoundTouchDevice::instancesList.erase( it );
         break;
       }
     }
@@ -360,12 +361,12 @@ namespace soundtouch
     //
     // press and release key
     //
+    elog.log( DEBUG, "%s: press virtual key (%s)...", SoundTouchDevice::tag, questionString.c_str() );
     for ( int i = 0; i < 2; ++i )
     {
       const char *keyState = ( i == 0 ) ? KEY_PRESS : KEY_RELEASE;
       snprintf( bufferPtr, 64, "<key state=\"%s\" sender=\"Gabbo\">%s</key>", keyState, _btn );
       String payload( bufferPtr );
-      elog.log( DEBUG, "%s: set keypress...(%s) %s", SoundTouchDevice::tag, questionString.c_str(), keyState );
       http.begin( questionString );
       //  make question
       httpResponseCode = http.POST( payload );
@@ -492,7 +493,7 @@ namespace soundtouch
    */
   SoundTouchDevice *SoundTouchDevice::getInstancePtr( uint32_t _instance )
   {
-    for ( auto elem : SoundTouchDevice::instList )
+    for ( auto elem : SoundTouchDevice::instancesList )
     {
       if ( elem.first == _instance )
       {
@@ -602,7 +603,7 @@ namespace soundtouch
     while ( true )
     {
       timeToPing = ( esp_timer_get_time() > nextPing );
-      for ( auto elem : SoundTouchDevice::instList )
+      for ( auto elem : SoundTouchDevice::instancesList )
       {
         if ( timeToPing )
         {
@@ -637,7 +638,7 @@ namespace soundtouch
     while ( true )
     {
       wasEntry = false;
-      for ( auto elem : SoundTouchDevice::instList )
+      for ( auto elem : SoundTouchDevice::instancesList )
       {
         if ( !elem.second->xmlList.empty() )
         {
@@ -647,7 +648,7 @@ namespace soundtouch
           break;
         }
       }
-      for ( auto elem : SoundTouchDevice::instList )
+      for ( auto elem : SoundTouchDevice::instancesList )
       {
         if ( !elem.second->msgList.empty() )
         {

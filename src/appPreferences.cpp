@@ -34,7 +34,8 @@ namespace appprefs
       String hn( &hostname[ 0 ] );
       LocalPrefs::lPref.putUInt( SYSLOGSRV, 0U );
       LocalPrefs::lPref.putUShort( SYSLOGPORT, ( uint16_t ) 514 );
-      LocalPrefs::lPref.putString( LOCAL_TIMEZONE, "GMT" );
+      // LocalPrefs::lPref.putString( LOCAL_TIMEZONE, "GMT" );
+      LocalPrefs::lPref.putString( LOCAL_TIMEZONE, "CET-1CEST,M3.5.0,M10.5.0/3" );
       LocalPrefs::lPref.putString( LOCAL_HOSTNAME, hn );
       LocalPrefs::lPref.putUChar( DEBUGSETTING, logger::DEBUG );
       LocalPrefs::setIfPrefsInit( true );

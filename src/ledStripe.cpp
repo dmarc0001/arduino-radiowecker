@@ -5,7 +5,7 @@
 #include "appPreferences.hpp"
 #include "ledColorsDefinition.hpp"
 
-namespace alarmclock
+namespace alertclock
 {
   //
   // timer definitions
@@ -272,4 +272,4 @@ namespace alarmclock
     }
   }
 
-}  // namespace alarmclock
+}  // namespace alertclock

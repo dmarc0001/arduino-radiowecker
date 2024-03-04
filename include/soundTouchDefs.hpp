@@ -6,6 +6,7 @@
 
 namespace soundtouch
 {
+  constexpr const char *MSG_TYPE_SDKINFO{ "SoundTouchSdkInfo" };                      //! after connection via websocket appear sdkinfo
   constexpr const char *MSG_TYPE_USER_UPDATES{ "userActivityUpdate" };                //! updates from user first level
   constexpr const char *MSG_TYPE_UPDATES{ "updates" };                                //! updates first level
   constexpr const char *UPDATE_VOLUME{ "volumeUpdated" };                             //! volume updated
@@ -65,7 +66,7 @@ namespace soundtouch
   constexpr const char *WEB_GET_ZONE{ "/getZone" };                //! get zone question
   constexpr const char *WEB_CMD_VOLUME{ "/volume" };               //! get/set device/zone volume
   constexpr const char *WEB_CMD_KEY{ "/key" };                     //! get/set device/zone mute
-  constexpr int32_t TIMEOUNT_WHILE_DEVICE_INIT{ 5000 };            //! timeout in ms while soundtouch device is timeout
+  constexpr int32_t TIMEOUNT_WHILE_DEVICE_INIT{ 10000 };           //! timeout in ms while soundtouch device is timeout
 
   /**
    * defines which kind of ws message we have
@@ -74,6 +75,7 @@ namespace soundtouch
   {
     WS_USER_ACTIVITY_UPDATES,  //! user has changes made
     WS_UPDATES,                //! updates was made
+    WS_USER_SDK_INFO,          //! sdk info was send
     WS_UNKNOWN                 //! unknown type
   };
 

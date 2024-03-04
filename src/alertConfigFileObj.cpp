@@ -2,7 +2,7 @@
 #include "statusObject.hpp"
 #include "statics.hpp"
 
-namespace alarmclock
+namespace alertclock
 {
   using namespace logger;
 
@@ -48,11 +48,11 @@ namespace alarmclock
         entry->volume = static_cast< uint8_t >( AlertConfObj::getValueFromJsonObj( "volume", elem ).toInt() );
         entry->location = AlertConfObj::getValueFromJsonObj( "location", elem );
         entry->source = AlertConfObj::getValueFromJsonObj( "source", elem );
-        entry->raiseVol = ( AlertConfObj::getValueFromJsonObj( "raise", elem ).compareTo( "true" ) == 1 ) ? true : false;
+        entry->raiseVol = ( ( AlertConfObj::getValueFromJsonObj( "raise", elem ) ).compareTo( "true" ) == 0 ) ? true : false;
         entry->duration = static_cast< uint16_t >( AlertConfObj::getValueFromJsonObj( "duration", elem ).toInt() );
         entry->sourceAccount = AlertConfObj::getValueFromJsonObj( "account", elem );
         entry->type = AlertConfObj::getValueFromJsonObj( "type", elem );
-        entry->enable = ( AlertConfObj::getValueFromJsonObj( "enable", elem ).compareTo( "true" ) == 1 ) ? true : false;
+        entry->enable = ( ( AlertConfObj::getValueFromJsonObj( "enable", elem ) ).compareTo( "true" ) == 0 ) ? true : false;
         entry->note = AlertConfObj::getValueFromJsonObj( "note", elem );
         entry->alertHour = static_cast< uint8_t >( AlertConfObj::getValueFromJsonObj( "hour", elem ).toInt() );
         entry->alertMinute = static_cast< uint8_t >( AlertConfObj::getValueFromJsonObj( "minute", elem ).toInt() );
@@ -379,4 +379,4 @@ namespace alarmclock
     }
     return deviceList;
   }
-}  // namespace alarmclock
+}  // namespace alertclock

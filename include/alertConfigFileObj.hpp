@@ -9,7 +9,7 @@
 #include "appPreferences.hpp"
 #include "appStructs.hpp"
 
-namespace alarmclock
+namespace alertclock
 {
   /**
    * class handle alert config file, this was a json config file
@@ -31,4 +31,4 @@ namespace alarmclock
     static AlertDayList getAlertDaysList( const String & );                       //! convert to alert days
     static AlertDeviceIdList getDevicesListForAlert( const String & );            //! List of device-ID's for an alert
   };
-}  // namespace alarmclock
+}  // namespace alertclock

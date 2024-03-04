@@ -29,10 +29,10 @@ namespace soundtouch
     static TaskHandle_t decTaskHandle;
     static uint32_t instances;
     uint32_t instance;
-    static InstancesList instList;
+    static InstancesList instancesList;
     SoundTouchDeviceRunningMode runMode;
     WebsocketsClient wsClient;
-    alarmclock::DeviceEntryPtr device;
+    alertclock::DeviceEntryPtr device;
     SoundTouchDeviceState currentState;
     XmlMessageList xmlList;
     DecodetMessageList msgList;
@@ -41,7 +41,7 @@ namespace soundtouch
     SoundTouchDevice();  //! no default constructor!
 
     public:
-    explicit SoundTouchDevice( alarmclock::DeviceEntryPtr );
+    explicit SoundTouchDevice( alertclock::DeviceEntryPtr );
     ~SoundTouchDevice();
     bool getDeviceInfos();  //! get device Infos for current State
     bool setCurrentVolume( uint8_t, bool _mute = false );

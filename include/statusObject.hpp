@@ -7,7 +7,7 @@
 #include "appPreferences.hpp"
 #include "appStructs.hpp"
 
-namespace alarmclock
+namespace alertclock
 {
   class StatusObject
   {
@@ -37,4 +37,4 @@ namespace alarmclock
 
     private:
   };
-}  // namespace alarmclock
+}  // namespace alertclock

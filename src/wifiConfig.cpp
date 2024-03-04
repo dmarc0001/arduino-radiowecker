@@ -2,7 +2,7 @@
 #include "wifiConfig.hpp"
 #include "statusObject.hpp"
 
-namespace alarmclock
+namespace alertclock
 {
   using namespace logger;
 
@@ -25,9 +25,17 @@ namespace alarmclock
     // WifiConfig::wm.setConfigPortalBlocking( false );
     WifiConfig::wm.setConfigPortalBlocking( true );
     WifiConfig::wm.setConnectTimeout( 20 );
-    sntp_set_sync_mode( SNTP_SYNC_MODE_IMMED );
-    sntp_setoperatingmode( SNTP_OPMODE_POLL );
-    sntp_setservername( 1, "pool.ntp.org" );
+    //
+    // esp32 time config
+    // BUG: timezone not work, usinf gmt offset
+    configTime( appprefs::BUGFIX_TIMEZONE_OFFSET, 0, "pool.ntp.org", "de.pool.ntp.org" );
+    // the old way...
+    // sntp_set_sync_mode( SNTP_SYNC_MODE_IMMED );
+    // sntp_setoperatingmode( SNTP_OPMODE_POLL );
+    // sntp_setservername( 1, "pool.ntp.org" );
+    //
+    // set an callback for my reasons
+    //
     sntp_set_time_sync_notification_cb( WifiConfig::timeSyncNotificationCallback );
     if ( WifiConfig::wm.autoConnect( "EnvServerConfigAP" ) )
     {
@@ -118,7 +126,6 @@ namespace alarmclock
         {
           elog.log( DEBUG, "%s: gotten system time!", WifiConfig::tag );
           Elog::provideTime( ti.tm_year + 1900, ti.tm_mon + 1, ti.tm_mday, ti.tm_hour, ti.tm_min, ti.tm_sec );
-          StatusObject::setWlanState( WlanState::TIMESYNCED );
         }
         break;
       default:
@@ -149,4 +156,4 @@ namespace alarmclock
     elog.log( INFO, "%s: config callback...OK", WifiConfig::tag );
   }
 
-}  // namespace alarmclock
+}  // namespace alertclock
