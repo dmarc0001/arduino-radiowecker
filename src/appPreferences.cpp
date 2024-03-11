@@ -7,6 +7,7 @@ namespace appprefs
   constexpr const char *INITVAL{ "wasInit" };
   constexpr const char *SYSLOGSRV{ "syslogServer" };
   constexpr const char *SYSLOGPORT{ "syslogPort" };
+  constexpr const char *LOCAL_TIMEZONE_OFFSET{ "timezone-offset" };
   constexpr const char *LOCAL_TIMEZONE{ "locTimeZone" };
   constexpr const char *LOCAL_HOSTNAME{ "hostName" };
   constexpr const char *DEBUGSETTING{ "debugging" };
@@ -34,8 +35,8 @@ namespace appprefs
       String hn( &hostname[ 0 ] );
       LocalPrefs::lPref.putUInt( SYSLOGSRV, 0U );
       LocalPrefs::lPref.putUShort( SYSLOGPORT, ( uint16_t ) 514 );
-      // LocalPrefs::lPref.putString( LOCAL_TIMEZONE, "GMT" );
-      LocalPrefs::lPref.putString( LOCAL_TIMEZONE, "CET-1CEST,M3.5.0,M10.5.0/3" );
+      LocalPrefs::lPref.putLong( LOCAL_TIMEZONE_OFFSET, appprefs::BUGFIX_TIMEZONE_OFFSET );
+      LocalPrefs::lPref.putString( LOCAL_TIMEZONE, "GMT" );
       LocalPrefs::lPref.putString( LOCAL_HOSTNAME, hn );
       LocalPrefs::lPref.putUChar( DEBUGSETTING, logger::DEBUG );
       LocalPrefs::setIfPrefsInit( true );
@@ -77,20 +78,36 @@ namespace appprefs
   }
 
   /**
+   * get the offset to GMT
+   */
+  long LocalPrefs::getTimezoneOffset()
+  {
+    return ( LocalPrefs::lPref.getLong( LOCAL_TIMEZONE_OFFSET, appprefs::BUGFIX_TIMEZONE_OFFSET ) );
+  }
+
+  /**
+   * set the offset to GMT
+   */
+  bool LocalPrefs::setTimezoneOffset( long _offset )
+  {
+    return ( LocalPrefs::lPref.putLong( LOCAL_TIMEZONE_OFFSET, _offset ) );
+  }
+
+  /**
    * get local timezone
    */
-  String LocalPrefs::getTimeZone()
-  {
-    return ( LocalPrefs::lPref.getString( LOCAL_TIMEZONE, "GMT" ) );
-  }
+  // String LocalPrefs::getTimeZone()
+  // {
+  //   return ( LocalPrefs::lPref.getString( LOCAL_TIMEZONE, "GMT" ) );
+  // }
 
   /**
    * set local timezone
    */
-  bool LocalPrefs::setTimeZone( String &_zone )
-  {
-    return ( LocalPrefs::lPref.putString( LOCAL_TIMEZONE, _zone ) > 0 );
-  }
+  // bool LocalPrefs::setTimeZone( String &_zone )
+  // {
+  //   return ( LocalPrefs::lPref.putString( LOCAL_TIMEZONE, _zone ) > 0 );
+  // }
 
   /**
    * get the local hostname

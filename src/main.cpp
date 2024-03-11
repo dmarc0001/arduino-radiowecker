@@ -13,8 +13,8 @@
 #include "ledStripe.hpp"
 #include "alertConfigFileObj.hpp"
 #include "deviceDiscover.hpp"
-// #include "soundtouchDevice.hpp"
 #include "soundTouchAlert.hpp"
+#include "webServer.hpp"
 
 void setup()
 {
@@ -43,11 +43,12 @@ void setup()
   elog.setSyslogOnline( false );
   elog.addSyslogLogging( level );
   elog.log( INFO, "main: start with logging..." );
+  // BUG: do not work by esp32-s2
   // set my timezone, i deal with timestamps
-  elog.log( DEBUG, "main: set timezone (%s)...", appprefs::LocalPrefs::getTimeZone().c_str() );
+  // elog.log( DEBUG, "main: set timezone (%s)...", appprefs::LocalPrefs::getTimeZone().c_str() );
   // set my timezone, i deal with timestamps
-  setenv( "TZ", appprefs::LocalPrefs::getTimeZone().c_str(), 1 );
-  tzset();
+  // setenv( "TZ", appprefs::LocalPrefs::getTimeZone().c_str(), 1 );
+  // tzset();
   static String hName( appprefs::LocalPrefs::getHostName() );
   elog.log( INFO, "%s: hostname: <%s>...", tag, hName.c_str() );
   //
@@ -74,7 +75,10 @@ void setup()
   //
   elog.log( DEBUG, "%s: start alert task...", tag );
   AlertTask::start();
+  elog.log( DEBUG, "%s: start device discover task...", tag );
   DeviceDiscover::init();
+  elog.log( DEBUG, "%s: init webserver...", tag );
+  webserver::AlWebServer::init();
 }
 
 void addTestAlert()
@@ -124,7 +128,7 @@ void addTestAlert()
   alert->location = "";                                       //! have to read in manual api
   alert->source = "PRESET_1";                                 //! preset or string to source
   alert->raiseVol = true;                                     //! should volume raisng on? down
-  alert->duration = 90;                                      //! length in secounds
+  alert->duration = 90;                                       //! length in secounds
   alert->days = { mo, tu, we, tu, fr, sa, su };               //! if present, days to alert
   alert->devices.push_back( device.id );                      //! which devices?
   alert->enable = true;                                       //! alert enable?
@@ -236,11 +240,11 @@ void loop()
       case WlanState::SEARCHING:
         // it was with connection, now without
         elog.log( WARNING, "main: ip connectivity lost, stop webserver." );
-        // TODO: EnvWebServer::stop();
+        webserver::AlWebServer::stop();
         break;
       case WlanState::CONNECTED:
         elog.log( INFO, "main: ip connectivity found, start webserver." );
-        // TODO: EnvWebServer::start();
+        webserver::AlWebServer::start();
         break;
       case WlanState::TIMESYNCED:
         elog.log( INFO, "main: timesynced. enable alerts..." );

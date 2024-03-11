@@ -17,7 +17,9 @@ namespace soundtouch
       : xmlList( _xmlList ), msgList( _msgList )
   {
     elog.log( logger::INFO, "%s: soundtouch xml parser create...", SoundTouchXMLParser::tag );
+    // init semaphore
     vSemaphoreCreateBinary( parseSem );
+    // free semaphore
     xSemaphoreGive( parseSem );
   }
 
@@ -59,6 +61,7 @@ namespace soundtouch
         xSemaphoreGive( parseSem );
         return false;
       }
+      // init the structures
       yxml_init( x, x + 1, bufflen );
       //
       // parsing message
@@ -70,7 +73,7 @@ namespace soundtouch
       {
         yield();
         yxml_ret_t r = yxml_parse( x, *doc );
-        // result is.....
+        // result is type.....
         switch ( r )
         {
           case YXML_EEOF:    // Unexpected EOF
@@ -85,14 +88,14 @@ namespace soundtouch
           case YXML_OK:  // Character consumed, no new token present
             break;
           case YXML_ELEMSTART:
-            // element start
+            // element started his name is....
             params.elemName = std::move( String( x->elem ) );
             computeElemStart( params );
             yield();
             ++params.depth;
             break;
           case YXML_CONTENT:
-            // content add
+            // xml element content add to value
             params.attrVal += std::move( String( x->data ) );
             break;
           case YXML_ELEMEND:

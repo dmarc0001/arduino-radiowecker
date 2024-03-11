@@ -59,12 +59,15 @@ namespace appprefs
     static uint16_t getSyslogPort();             //! get syslog pornum
     static bool setSyslogServer( IPAddress & );  //! set syslog server ipo
     static bool setSyslogPort( uint16_t );       //! set syslog portnum
-    static String getTimeZone();                 //! get my timezone
-    static bool setTimeZone( String & );         //! set my timezone
-    static String getHostName();                 //! get my own hostname
-    static bool setHostName( String & );         //! set my Hostname
-    static uint8_t getLogLevel();                //! get Logging
-    static bool setLogLevel( uint8_t );          //! set Logging
+    static long getTimezoneOffset();              //! get offset from GMT
+    static bool setTimezoneOffset(long);             //! set Timezone Offset
+    // bug in esp32 lib, don't work
+    // static String getTimeZone();                 //! get my timezone
+    // static bool setTimeZone( String & );         //! set my timezone
+    static String getHostName();          //! get my own hostname
+    static bool setHostName( String & );  //! set my Hostname
+    static uint8_t getLogLevel();         //! get Logging
+    static bool setLogLevel( uint8_t );   //! set Logging
 
     private:
     static bool getIfPrefsInit();        //! internal, is preferences initialized?

@@ -1,6 +1,7 @@
 #include <Esp.h>
 #include "wifiConfig.hpp"
 #include "statusObject.hpp"
+#include "appPreferences.hpp"
 
 namespace alertclock
 {
@@ -28,7 +29,7 @@ namespace alertclock
     //
     // esp32 time config
     // BUG: timezone not work, usinf gmt offset
-    configTime( appprefs::BUGFIX_TIMEZONE_OFFSET, 0, "pool.ntp.org", "de.pool.ntp.org" );
+    configTime( appprefs::LocalPrefs::getTimezoneOffset(), 0, "pool.ntp.org", "de.pool.ntp.org" );
     // the old way...
     // sntp_set_sync_mode( SNTP_SYNC_MODE_IMMED );
     // sntp_setoperatingmode( SNTP_OPMODE_POLL );
