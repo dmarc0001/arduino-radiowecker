@@ -62,16 +62,23 @@ namespace soundtouch
       sdDevice->setDeviceRunningMode( ST_STATE_ERROR );
       wasOkay = false;
     }
+    if ( wasOkay && sdDevice->getDeviceRunningMode() == ST_STATE_ERROR )
+    {
+      wasOkay = false;
+    }
     if ( wasOkay && sdDevice->isZoneMemberOrMaster() )
     {
       elog.log( ERROR, "%s: device is in a zone, can't start alert, ABORT!", SoundTouchAlert::tag );
       sdDevice->setDeviceRunningMode( ST_STATE_ERROR );
       wasOkay = false;
     }
-    sdDevice->setDeviceRunningMode( ST_STATE_WAIT_FOR_INIT_COMLETE );
-    // save old volume after alaert
-    oldVolume = sdDevice->getCurrentVolume();
-    wasOkay = sdDevice->setCurrentVolume( 0 );
+    if ( wasOkay )
+    {
+      sdDevice->setDeviceRunningMode( ST_STATE_WAIT_FOR_INIT_COMLETE );
+      // save old volume after alaert
+      oldVolume = sdDevice->getCurrentVolume();
+      wasOkay = sdDevice->setCurrentVolume( 0 );
+    }
     //
     // power on on implicit when press preset key
     //
@@ -107,7 +114,8 @@ namespace soundtouch
     //
     // check if the device is playing
     //
-    if ( ( currPlayState == BUFFERING_STATE ) || ( currPlayState == PLAY_STATE ) )
+    if ( ( ( currPlayState == BUFFERING_STATE ) || ( currPlayState == PLAY_STATE ) ) &&
+         ( sdDevice->getDeviceRunningMode() != ST_STATE_ERROR ) )
     {
       //
       // device running

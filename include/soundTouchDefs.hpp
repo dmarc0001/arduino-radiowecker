@@ -121,12 +121,12 @@ namespace soundtouch
    */
   enum WsPlayStatus : uint8_t
   {
+    INVALID_PLAY_STATUS,
     STANDBY_STATE,
     STOP_STATE,
     PAUSE_STATE,
     BUFFERING_STATE,
-    PLAY_STATE,
-    INVALID_PLAY_STATUS
+    PLAY_STATE
   };
 
   /**
@@ -214,7 +214,7 @@ namespace soundtouch
     {
       // make the right type
       this->msgType = MSG_UPDATE_NOW_PLAYING_CHANGED;
-      this->playStatus = STANDBY_STATE;
+      this->playStatus = INVALID_PLAY_STATUS;
     };
 
     // <nowPlaying deviceID="689E19653E96" source="TUNEIN" sourceAccount="">

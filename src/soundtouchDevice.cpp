@@ -580,7 +580,8 @@ namespace soundtouch
 
       case ST_STATE_WAIT_FOR_INIT_COMLETE:
         break;
-
+        
+      case ST_STATE_ERROR:
       default:
         break;
     }  // end switch runMode

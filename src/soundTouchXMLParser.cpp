@@ -89,9 +89,29 @@ namespace soundtouch
             break;
           case YXML_ELEMSTART:
             // element started his name is....
-            params.elemName = std::move( String( x->elem ) );
-            computeElemStart( params );
-            yield();
+            params.attrName = std::move( String( x->elem ) );
+            if ( params.depth == 0 )
+            {
+              //
+              // first lebel (rootlevel)
+              //
+              // elog.log( DEBUG, "%s: <root> element is <%s> level <%d>", SoundTouchXMLParser::tag, params.attrName.c_str(),
+              //           params.depth );
+              params.type = getMessageType( params.attrName );
+              // not interesting for me
+              params.isError = ( params.type == WS_UNKNOWN );
+              if ( params.isError )
+              {
+                elog.log( ERROR, "%s: <root> element <%s> level <%d> is unknown type, abort parsing!", SoundTouchXMLParser::tag,
+                          params.attrName.c_str(), params.depth );
+              }
+            }
+            else
+            {
+              // compute level 1-x
+              computeElemStart( params );
+              yield();
+            }
             ++params.depth;
             break;
           case YXML_CONTENT:
@@ -103,7 +123,7 @@ namespace soundtouch
             --params.depth;
             computeElemEnd( params );
             yield();
-            params.elemName.clear();
+            params.attrName.clear();
             params.attrVal.clear();
             // element endet
             break;
@@ -129,8 +149,8 @@ namespace soundtouch
           case YXML_PICONTENT: /* Content of a PI                            */
             params.piVal += String( x->pi );
           case YXML_PIEND: /* End of a processing instruction            */
-            // elog.log( DEBUG, "%s: <level %d> pi \"%s\" = \"%s\"", SoundTouchXMLParser::tag, params.depth, params.elemName.c_str(),
-            //           params.attrVal.c_str() );
+            elog.log( DEBUG, "%s: <level %d> pi \"%s\" = \"%s\"", SoundTouchXMLParser::tag, params.depth, params.attrName.c_str(),
+                      params.attrVal.c_str() );
           default:
             break;
         }
@@ -185,20 +205,13 @@ namespace soundtouch
     switch ( p.depth )
     {
       case 0:
-        // elog.log( DEBUG, "%s: <root> element is <%s>", SoundTouchXMLParser::tag, p.elemName.c_str() );
-        p.type = getMessageType( p.elemName );
-        // not interesting for me
-        p.isError = ( p.type == WS_UNKNOWN );
-        if ( p.isError )
-        {
-          elog.log( ERROR, "%s: <root> element (%s) is unknown type, abort parsing!", SoundTouchXMLParser::tag, p.elemName.c_str() );
-        }
+        // handled in main loop
         break;
       case 1:
         // elog.log( DEBUG, "%s: <level 1> element update type is <%s>...", SoundTouchXMLParser::tag, p.elemName.c_str() );
         if ( p.type == WS_UPDATES )
         {
-          switch ( getUpdateType( p.elemName ) )
+          switch ( getUpdateType( p.attrName ) )
           {
             case MSG_UPDATE_VOLUME:
               // make an object for volume
@@ -316,7 +329,7 @@ namespace soundtouch
               //           static_cast< SoundTouchZoneUpdate * >( p.updatePtr )->members.size() );
               break;
             case MSG_UPDATE_NOW_PLAYING_CHANGED:
-              setNowPlayingMessageSubPropertys( p.updatePtr, p.elemName, p.attrVal );
+              setNowPlayingMessageSubPropertys( p.updatePtr, p.attrName, p.attrVal );
               break;
             default:
               break;
@@ -328,7 +341,7 @@ namespace soundtouch
           switch ( p.updatePtr->getUpdateType() )
           {
             case MSG_UPDATE_VOLUME:
-              setVolumeMessageSubPropertys( p.updatePtr, p.elemName, p.attrVal );
+              setVolumeMessageSubPropertys( p.updatePtr, p.attrName, p.attrVal );
               break;
           }
         }
@@ -358,7 +371,7 @@ namespace soundtouch
           //
           // is there the awaited attrib for zone
           //
-          if ( p.elemName.equals( UPDATE_PROPERTY_ZONE_ZONE ) && p.attrName.equals( UPDATE_PROPERTY_ZONE_ATTRIB_MASTER ) )
+          if ( p.attrName.equals( UPDATE_PROPERTY_ZONE_ZONE ) && p.attrName.equals( UPDATE_PROPERTY_ZONE_ATTRIB_MASTER ) )
           {
             static_cast< SoundTouchZoneUpdate * >( p.updatePtr )->masterID = p.attrVal;
             // elog.log( DEBUG, "%s: <level 2> attrib \"%s/%s\" = \"%s\"", SoundTouchXMLParser::tag, p.elemName.c_str(),
@@ -367,7 +380,7 @@ namespace soundtouch
           //
           // is there an attrib "source" in elem nowPlaying?
           //
-          if ( p.elemName.equals( UPDATE_PROPERTY_NPLAY_NOW_PLAYING ) && p.attrName.equals( UPDATE_PROPERTY_ATTR_SOURCE ) )
+          if ( p.attrName.equals( UPDATE_PROPERTY_NPLAY_NOW_PLAYING ) && p.attrName.equals( UPDATE_PROPERTY_ATTR_SOURCE ) )
           {
             // elog.log( DEBUG, "%s: <level 2> attrib \"%s/%s\" = \"%s\"", SoundTouchXMLParser::tag, p.elemName.c_str(),
             //           p.attrName.c_str(), p.attrVal.c_str() );
