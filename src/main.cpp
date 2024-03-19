@@ -188,6 +188,83 @@ void addTestAlert()
   StatusObject::alertList.push_back( alert );
 }
 
+/*
+void addTestAlert2()
+{
+  // TODO: temporäre manuall messages in die queue
+  using namespace alertclock;
+  using namespace logger;
+  using namespace soundtouch;
+
+  const char *tag{ "testalert" };
+
+  DeviceEntryPtr device = std::make_shared< DeviceEntry >();
+  IPAddress addr;
+  addr.fromString( "192.168.1.68" );
+  device->name = String( "Arbeitszimmer" );
+  device->addr = addr;
+  device->id = String( "689E19653E96" );
+  device->webPort = 8090;
+  device->wsPort = 8080;
+  device->type = String( "Soundtouch" );
+  device->note = String( "TESTALERTDEVICE" );
+
+  SoundTouchDevicePtr sd = std::make_shared< SoundTouchDevice >( device );
+  delay( 4000 );
+
+  String message;
+  // message = "<updates deviceID=\"689E19653E96\"> ";
+  // message += "<nowPlayingUpdated> ";
+  // message += "<nowPlaying deviceID=\"689E19653E96\" source=\"TUNEIN\" sourceAccount=\"\"> ";
+  // message += "<ContentItem source=\"TUNEIN\" type=\"stationurl\" location=\"/v1/playback/station/s24950\"";
+  // message += " sourceAccount=\"\" isPresetable=\"true\"> ";
+  // message += "<itemName>91.4 Berliner Rundfunk</itemName> ";
+  // message += "<containerArt>http://cdn-profiles.tunein.com/s24950/images/logoq.jpg?t=160315</containerArt> ";
+  // message += "</ContentItem> ";
+  // message += "<track>Berliner Rundfunk</track> ";
+  // message += "<artist>Berliner Rundfunk 91.4 - Die besten Hits aller Zeiten</artist> ";
+  // message += "<album></album> ";
+  // message += "<stationName>Berliner Rundfunk</stationName> ";
+  // message +=
+  //     "<art artImageStatus=\"IMAGE_PRESENT\">http://cdn-profiles.tunein.com/s24950/images/logog.jpg?t=637387494910000000</art> ";
+  // message += "<favoriteEnabled /> ";
+  // message += "<playStatus>BUFFERING_STATE</playStatus> ";
+  // message += "<streamType>RADIO_STREAMING</streamType> ";
+  // message += "</nowPlaying> ";
+  // message += "</nowPlayingUpdated> ";
+  // message += "</updates>";
+
+  // message = "<updates deviceID=\"689E19653E96\"> ";
+  // message += "<nowPlayingUpdated> ";
+  // message += "<nowPlaying deviceID=\"689E19653E96\" source=\"STANDBY\"> ";
+  // message += "<ContentItem source=\"STANDBY\" isPresetable=\"false\" /> ";
+  // message += "</nowPlaying> ";
+  // message += "</nowPlayingUpdated> ";
+  // message += "</updates> ";
+
+  // message = "<updates deviceID=\"689E19653E96\"> ";
+  // message += "<volumeUpdated> ";
+  // message += "<volume> ";
+  // message += "<targetvolume>32</targetvolume> ";
+  // message += "<actualvolume>32</actualvolume> ";
+  // message += "<muteenabled>false</muteenabled> ";
+  // message += "</volume> ";
+  // message += "</volumeUpdated> ";
+  // message += "</updates> ";
+
+  // message = "<updates deviceID=\"689E19653E96\"> ";
+  // message += "<zoneUpdated> ";
+  // message += "<zone master=\"689E19653E96\"> ";
+  // message += "<member ipaddress=\"192.168.1.68\">689E19653E96</member> ";
+  // message += "<member ipaddress=\"192.168.1.20\">F45EABFBCD9A</member> ";
+  // message += "</zone> ";
+  // message += "</zoneUpdated> ";
+  // message += "</updates> ";
+
+  // sd->xmlList.push_back( message );
+  delay( 6000 );
+}
+*/
 void setLoggerTime()
 {
   using namespace logger;
