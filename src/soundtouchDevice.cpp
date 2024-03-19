@@ -129,7 +129,7 @@ namespace soundtouch
 
     elog.log( DEBUG, "%s: ask for nowPlaying...(%s)", SoundTouchDevice::tag, questionString.c_str() );
     // TODO; for debug a short delay
-    delay(100);
+    delay( 100 );
     http.begin( questionString );
     // make question
     int httpResponseCode = http.GET();
@@ -184,7 +184,7 @@ namespace soundtouch
 
     elog.log( DEBUG, "%s: ask for zones...(%s)", SoundTouchDevice::tag, questionString.c_str() );
     // TODO; for debug a short delay
-    delay(100);
+    delay( 100 );
     http.begin( questionString );
     //  make question
     int httpResponseCode = http.GET();
@@ -239,7 +239,7 @@ namespace soundtouch
 
     elog.log( DEBUG, "%s: ask for volume...(%s)", SoundTouchDevice::tag, questionString.c_str() );
     // TODO; for debug a short delay
-    delay(100);
+    delay( 100 );
     http.begin( questionString );
     //  make question
     int httpResponseCode = http.GET();
