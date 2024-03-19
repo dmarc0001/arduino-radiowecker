@@ -128,8 +128,8 @@ namespace soundtouch
     String questionString( std::move( getUrlString( WEB_GET_NOW_PLAYINGZONE ) ) );
 
     elog.log( DEBUG, "%s: ask for nowPlaying...(%s)", SoundTouchDevice::tag, questionString.c_str() );
-    // prepare http
-    // http.begin( tcpClient, questionString );
+    // TODO; for debug a short delay
+    delay(100);
     http.begin( questionString );
     // make question
     int httpResponseCode = http.GET();
@@ -183,8 +183,8 @@ namespace soundtouch
     String questionString( std::move( getUrlString( WEB_GET_ZONE ) ) );
 
     elog.log( DEBUG, "%s: ask for zones...(%s)", SoundTouchDevice::tag, questionString.c_str() );
-    // prepare http
-    // http.begin( tcpClient, questionString );
+    // TODO; for debug a short delay
+    delay(100);
     http.begin( questionString );
     //  make question
     int httpResponseCode = http.GET();
@@ -238,8 +238,8 @@ namespace soundtouch
     String questionString( std::move( getUrlString( WEB_CMD_VOLUME ) ) );
 
     elog.log( DEBUG, "%s: ask for volume...(%s)", SoundTouchDevice::tag, questionString.c_str() );
-    // prepare http
-    // http.begin( tcpClient, questionString );
+    // TODO; for debug a short delay
+    delay(100);
     http.begin( questionString );
     //  make question
     int httpResponseCode = http.GET();
@@ -580,7 +580,7 @@ namespace soundtouch
 
       case ST_STATE_WAIT_FOR_INIT_COMLETE:
         break;
-        
+
       case ST_STATE_ERROR:
       default:
         break;
