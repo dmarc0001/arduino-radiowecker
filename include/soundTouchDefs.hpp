@@ -11,7 +11,7 @@ namespace soundtouch
   constexpr const char *MSG_TYPE_UPDATES{ "updates" };                                //! updates first level
   constexpr const char *UPDATE_VOLUME{ "volumeUpdated" };                             //! volume updated
   constexpr const char *UPDATE_PRESETS{ "presetsUpdated" };                           //! presets updated
-  constexpr const char *UPDATE_NOW_PLAYING{ "nowPlayingUpdated" };                    //! playing updated
+  constexpr const char *UPDATE_NOW_PLAYING_UPDATED{ "nowPlayingUpdated" };            //! playing updated
   constexpr const char *UPDATE_RECENT{ "recentsUpdated" };                            //! update recent playings (ignore here)
   constexpr const char *UPDATE_BASS{ "bassUpdated" };                                 //! bass updated
   constexpr const char *UPDATE_ZONE{ "zoneUpdated" };                                 //! zone updated
@@ -191,6 +191,15 @@ namespace soundtouch
       this->msgType = MSG_UPDATE_VOLUME;
     };
   };
+  // level:0 <updates deviceID="689E19653E96">
+  // level:1   <volumeUpdated>
+  // level:2     <volume>
+  // level:3       <targetvolume>32</targetvolume>
+  // level:3       <actualvolume>32</actualvolume>
+  // level:3       <muteenabled>false</muteenabled>
+  // level:2     </volume>
+  // level:1   </volumeUpdated>
+  // level:0 </updates>
 
   /**
    * class for websocket msg now playing updates
@@ -216,30 +225,38 @@ namespace soundtouch
       this->msgType = MSG_UPDATE_NOW_PLAYING_CHANGED;
       this->playStatus = INVALID_PLAY_STATUS;
     };
-
-    // <nowPlaying deviceID="689E19653E96" source="TUNEIN" sourceAccount="">
-    //   <ContentItem source="TUNEIN" type="stationurl" location="/v1/playback/station/s24950" sourceAccount="" isPresetable="true">
-    //     <itemName>91.4 Berliner Rundfunk</itemName>
-    //     <containerArt>http://cdn-profiles.tunein.com/s24950/images/logoq.jpg?t=160315</containerArt>
-    //   </ContentItem>
-    //   <track>Berliner Rundfunk</track>
-    //   <artist>Berliner Rundfunk 91.4 - Die besten Hits aller Zeiten</artist>
-    //   <album></album>
-    //   <stationName>Berliner Rundfunk</stationName>
-    //   <art artImageStatus="IMAGE_PRESENT">http://cdn-profiles.tunein.com/s24950/images/logog.jpg?t=637387494910000000</art>
-    //   <favoriteEnabled />
-    //   <playStatus>BUFFERING_STATE</playStatus>
-    //   <streamType>RADIO_STREAMING</streamType>
-    // </nowPlaying>
-
-    // <updates deviceID="689E19653E96">
-    //   <nowPlayingUpdated>
-    //     <nowPlaying deviceID="689E19653E96" source="STANDBY">
-    //       <ContentItem source="STANDBY" isPresetable="false" />
-    //     </nowPlaying>
-    //   </nowPlayingUpdated>
-    // </updates>
   };
+  // clang-format off
+  //
+  // level:0 <updates deviceID="689E19653E96">
+  // level:1   <nowPlayingUpdated>
+  // level:2     <nowPlaying deviceID="689E19653E96" source="TUNEIN" sourceAccount="">
+  // level:3       <ContentItem source="TUNEIN" type="stationurl" location="/v1/playback/station/s24950" sourceAccount="" isPresetable="true">
+  // level:4         <itemName>91.4 Berliner Rundfunk</itemName>
+  // level:4         <containerArt>http://cdn-profiles.tunein.com/s24950/images/logoq.jpg?t=160315</containerArt>
+  // level:3       </ContentItem>
+  // level:3       <track>Berliner Rundfunk</track>
+  // level:3       <artist>Berliner Rundfunk 91.4 - Die besten Hits aller Zeiten</artist>
+  // level:3       <album></album>
+  // level:3       <stationName>Berliner Rundfunk</stationName>
+  // level:3       <art artImageStatus="IMAGE_PRESENT">http://cdn-profiles.tunein.com/s24950/images/logog.jpg?t=637387494910000000</art>
+  // level:3       <favoriteEnabled />
+  // level:3       <playStatus>BUFFERING_STATE</playStatus>
+  // level:3       <streamType>RADIO_STREAMING</streamType>
+  // level:2     </nowPlaying>
+  // level:1   </nowPlayingUpdated>
+  // level:0 </updates>
+
+  // level:0 <updates deviceID="689E19653E96">
+  // level:1   <nowPlayingUpdated>
+  // level:2     <nowPlaying deviceID="689E19653E96" source="STANDBY">
+  // level:3       <ContentItem source="STANDBY" isPresetable="false" />
+  // level:2     </nowPlaying>
+  // level:1   </nowPlayingUpdated>
+  // level:0 </updates>
+
+  //
+  // clang-format on
 
   /**
    * class for message with zone updates
@@ -254,28 +271,22 @@ namespace soundtouch
       // make the right type
       this->msgType = MSG_UPDATE_ZONE;
     };
-    // <updates deviceID="689E19653E96">
-    //   <zoneUpdated>
-    //     <zone master="689E19653E96">
-    //       <member ipaddress="192.168.1.68">
-    //         689E19653E96
-    //       </member>
-    //       <member ipaddress="192.168.1.20">
-    //         F45EABFBCD9A
-    //       </member>
-    //     </zone>
-    //   </zoneUpdated>
-    // </updates>
+    // level:0 <updates deviceID="689E19653E96">
+    // level:1   <zoneUpdated>
+    // level:2     <zone master="689E19653E96">
+    // level:3       <member ipaddress="192.168.1.68">689E19653E96</member>
+    // level:3       <member ipaddress="192.168.1.20">F45EABFBCD9A</member>
+    // level:2     </zone>
+    // level:1   </zoneUpdated>
+    // level:0 </updates>
 
-    // <updates deviceID="689E19653E96">
-    //   <zoneUpdated>
-    //     <zone master="F45EABFBCD9A" senderIPAddress="192.168.1.20" senderIsMaster="true">
-    //       <member ipaddress="192.168.1.68">
-    //         689E19653E96
-    //       </member>
-    //     </zone>
-    //   </zoneUpdated>
-    // </updates>
+    // level:0 <updates deviceID="689E19653E96">
+    // level:1   <zoneUpdated>
+    // level:2     <zone master="F45EABFBCD9A" senderIPAddress="192.168.1.20" senderIsMaster="true">
+    // level:3       <member ipaddress="192.168.1.68">689E19653E96</member>
+    // level:2     </zone>
+    // level:1   </zoneUpdated>
+    // level:0 </updates>
   };
 
   class SoundTouchDeviceState
@@ -327,20 +338,20 @@ namespace soundtouch
 //
 // some useful things http://soundtouchdevice:8090/sources
 //
-// <sources deviceID="689E19653E96">
-// <sourceItem source="AUX" sourceAccount="AUX" status="READY" isLocal="true" multiroomallowed="true">AUX IN</sourceItem>
-// <sourceItem source="BLUETOOTH" status="UNAVAILABLE" isLocal="true" multiroomallowed="true"/>
-// <sourceItem source="NOTIFICATION" status="UNAVAILABLE" isLocal="false" multiroomallowed="true"/>
-// <sourceItem source="AMAZON" sourceAccount="useraccountname" status="READY" isLocal="false" multiroomallowed="true">useraccountname</sourceItem>
-// <sourceItem source="QPLAY" sourceAccount="QPlay1UserName" status="UNAVAILABLE" isLocal="true" multiroomallowed="true">QPlay1UserName</sourceItem>
-// <sourceItem source="QPLAY" sourceAccount="QPlay2UserName" status="UNAVAILABLE" isLocal="true" multiroomallowed="true">QPlay2UserName</sourceItem>
-// <sourceItem source="UPNP" sourceAccount="UPnPUserName" status="UNAVAILABLE" isLocal="false" multiroomallowed="true">UPnPUserName</sourceItem>
-// <sourceItem source="SPOTIFY" sourceAccount="SpotifyConnectUserName" status="UNAVAILABLE" isLocal="false" multiroomallowed="true">SpotifyConnectUserName</sourceItem>
-// <sourceItem source="STORED_MUSIC_MEDIA_RENDERER" sourceAccount="StoredMusicUserName" status="UNAVAILABLE" isLocal="false" multiroomallowed="true">StoredMusicUserName</sourceItem>
-// <sourceItem source="SPOTIFY" sourceAccount="SpotifyAlexaUserName" status="UNAVAILABLE" isLocal="false" multiroomallowed="true">SpotifyAlexaUserName</sourceItem>
-// <sourceItem source="ALEXA" status="READY" isLocal="false" multiroomallowed="true"/>
-// <sourceItem source="TUNEIN" status="READY" isLocal="false" multiroomallowed="true"/>
-// <sourceItem source="LOCAL_INTERNET_RADIO" status="READY" isLocal="false" multiroomallowed="true"/>
-// </sources>
+//level:0 <sources deviceID="689E19653E96">
+//level:1   <sourceItem source="AUX" sourceAccount="AUX" status="READY" isLocal="true" multiroomallowed="true">AUX IN</sourceItem>
+//level:1   <sourceItem source="BLUETOOTH" status="UNAVAILABLE" isLocal="true" multiroomallowed="true"/>
+//level:1   <sourceItem source="NOTIFICATION" status="UNAVAILABLE" isLocal="false" multiroomallowed="true"/>
+//level:1   <sourceItem source="AMAZON" sourceAccount="useraccountname" status="READY" isLocal="false" multiroomallowed="true">useraccountname</sourceItem>
+//level:1   <sourceItem source="QPLAY" sourceAccount="QPlay1UserName" status="UNAVAILABLE" isLocal="true" multiroomallowed="true">QPlay1UserName</sourceItem>
+//level:1   <sourceItem source="QPLAY" sourceAccount="QPlay2UserName" status="UNAVAILABLE" isLocal="true" multiroomallowed="true">QPlay2UserName</sourceItem>
+//level:1   <sourceItem source="UPNP" sourceAccount="UPnPUserName" status="UNAVAILABLE" isLocal="false" multiroomallowed="true">UPnPUserName</sourceItem>
+//level:1   <sourceItem source="SPOTIFY" sourceAccount="SpotifyConnectUserName" status="UNAVAILABLE" isLocal="false" multiroomallowed="true">SpotifyConnectUserName</sourceItem>
+//level:1   <sourceItem source="STORED_MUSIC_MEDIA_RENDERER" sourceAccount="StoredMusicUserName" status="UNAVAILABLE" isLocal="false" multiroomallowed="true">StoredMusicUserName</sourceItem>
+//level:1   <sourceItem source="SPOTIFY" sourceAccount="SpotifyAlexaUserName" status="UNAVAILABLE" isLocal="false" multiroomallowed="true">SpotifyAlexaUserName</sourceItem>
+//level:1   <sourceItem source="ALEXA" status="READY" isLocal="false" multiroomallowed="true"/>
+//level:1   <sourceItem source="TUNEIN" status="READY" isLocal="false" multiroomallowed="true"/>
+//level:1   <sourceItem source="LOCAL_INTERNET_RADIO" status="READY" isLocal="false" multiroomallowed="true"/>
+//level:0 </sources>
 //
 // clang-format on
