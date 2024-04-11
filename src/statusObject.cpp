@@ -15,6 +15,7 @@ namespace alertclock
   bool StatusObject::is_running{ false };
   bool StatusObject::is_spiffs{ false };
   volatile WlanState StatusObject::wlanState{ WlanState::DISCONNECTED };
+  volatile AlertState StatusObject::alertState{ AlertState::ALERT_NONE };
   volatile bool StatusObject::http_active{ false };
   AlRecordList StatusObject::alertList;
   DeviceEntrPtrList StatusObject::devList;
@@ -81,6 +82,37 @@ namespace alertclock
   WlanState StatusObject::getWlanState()
   {
     return StatusObject::wlanState;
+  }
+
+  /**
+   * set alert state, if an new alert will preparing and another is running kepp stsate running
+   */
+  void StatusObject::setAlertState( AlertState _state )
+  {
+    switch ( _state )
+    {
+      case ALERT_NONE:
+        alertState = _state;
+        break;
+
+      case ALERT_PREPARING:
+        if ( alertState == ALERT_RUNNING )
+          break;
+        alertState = _state;
+        break;
+
+      default:
+        alertState = _state;
+        break;
+    }
+  }
+
+  /**
+   * get alert state
+   */
+  AlertState StatusObject::getAlertState()
+  {
+    return alertState;
   }
 
   /**

@@ -24,6 +24,6 @@ namespace alertclock
     private:
     static void alTask( void * );
     static bool startAlert( AlertEntryPtr );
-    static bool alertLoop( soundtouch::SoundTouchAlertPtr );
+    static soundtouch::SoundTouchDeviceRunningMode alertLoop( soundtouch::SoundTouchAlertPtr );
   };
 }  // namespace alertclock

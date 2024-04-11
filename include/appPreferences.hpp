@@ -33,12 +33,14 @@ namespace appprefs
   constexpr const char *WEB_PARTITION_LABEL{ "mydata" };       //! label of the spiffs or null
   constexpr uint32_t WIFI_MAXIMUM_RETRY{ 5 };                  //! Max connection retries
   constexpr wifi_auth_mode_t WIFI_AUTH{ WIFI_AUTH_WPA2_PSK };  //! wifi auth method
-  constexpr uint8_t LED_STRIPE_COUNT = 1;                      //! count of LED
-  constexpr gpio_num_t LED_STRIPE_RMT_TX_GPIO = GPIO_NUM_18;   //! control pin GPIO für led control
+  constexpr uint8_t LED_STRIPE_COUNT = 3;                      //! count of LED
+  constexpr gpio_num_t LED_STRIPE_RMT_TX_GPIO = GPIO_NUM_4;    //! (internal GPIO_NUM_18) control pin GPIO für led control
   constexpr int LED_STRIP_BRIGHTNESS = 255;                    //! brightness led stripe
   constexpr EOrder LED_RGB_ORDER = GRB;                        //! what order is the red/green/blue byte
   constexpr uint32_t LED_STRIP_RESOLUTION_HZ = 10000000;       //! 10MHz resolution, 1 tick = 0.1us
-  constexpr uint8_t LED_STATUS = 0;                            //! indicator WLAN
+  constexpr uint8_t LED_WLAN = 0;                              //! indicator WLAN
+  constexpr uint8_t LED_ALERT = 1;                             //! indicator alert
+  constexpr uint8_t LED_HTTP = 2;                              //! indicator http activity
   constexpr uint8_t LED_ALL = 255;                             //! indicator means all led'S
   constexpr int32_t TASK_MARK_INTERVAL_MS = 43000;             //! interval between "mark" in tasks for debuging
 
@@ -59,8 +61,8 @@ namespace appprefs
     static uint16_t getSyslogPort();             //! get syslog pornum
     static bool setSyslogServer( IPAddress & );  //! set syslog server ipo
     static bool setSyslogPort( uint16_t );       //! set syslog portnum
-    static long getTimezoneOffset();              //! get offset from GMT
-    static bool setTimezoneOffset(long);             //! set Timezone Offset
+    static long getTimezoneOffset();             //! get offset from GMT
+    static bool setTimezoneOffset( long );       //! set Timezone Offset
     // bug in esp32 lib, don't work
     // static String getTimeZone();                 //! get my timezone
     // static bool setTimeZone( String & );         //! set my timezone

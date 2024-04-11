@@ -19,6 +19,16 @@ namespace alertclock
     FAILED
   };
 
+  enum AlertState : uint8_t
+  {
+    ALERT_NONE,
+    ALERT_PREPARING,
+    ALERT_RUNNING,
+    ALERT_FAIL,
+    ALERT_RUN_AND_FAIL,
+    ALERT_UNKNOWN
+  };
+
   enum SoundPreset : uint8_t
   {
     PRESET_1,

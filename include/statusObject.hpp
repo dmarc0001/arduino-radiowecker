@@ -12,12 +12,13 @@ namespace alertclock
   class StatusObject
   {
     private:
-    static const char *tag;               //! TAG for esp log
-    static bool is_init;                  //! was object initialized
-    static bool is_running;               //! is save Task running?
-    static bool is_spiffs;                //! is fikesystem okay?
-    static volatile WlanState wlanState;  //! is wlan disconnected, connected etc....
-    static volatile bool http_active;     //! was an acces via http?
+    static const char *tag;                  //! TAG for esp log
+    static bool is_init;                     //! was object initialized
+    static bool is_running;                  //! is save Task running?
+    static bool is_spiffs;                   //! is fikesystem okay?
+    static volatile WlanState wlanState;     //! is wlan disconnected, connected etc....
+    static volatile AlertState alertState;  //! alert stai
+    static volatile bool http_active;        //! was an acces via http?
 
     public:
     static AlRecordList alertList;           //! list of alerts (read from file)
@@ -28,6 +29,8 @@ namespace alertclock
     static void init();
     static void setWlanState( WlanState );
     static WlanState getWlanState();
+    static void setAlertState( AlertState );
+    static AlertState getAlertState();
     static void setHttpActive( bool );
     static bool getHttpActive();
     static bool getIsSpiffsOkay()

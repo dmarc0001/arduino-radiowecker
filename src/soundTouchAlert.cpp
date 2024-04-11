@@ -106,7 +106,7 @@ namespace soundtouch
 
   /**
    * have to call in ca 200ms steps
-   * control the different ststes of the device and alert
+   * control the different states of the device and alert
    */
   bool SoundTouchAlert::checkRunningAlert()
   {

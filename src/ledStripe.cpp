@@ -14,16 +14,23 @@ namespace alertclock
   constexpr int64_t WLANshortActionDist = getMicrosForMiliSec( 20 );
   constexpr int64_t HTTPActionFlashDist = getMicrosForMiliSec( 35 );
   constexpr int64_t HTTPActionDarkDist = getMicrosForMiliSec( 60 );
+  constexpr int64_t AlertActionDarkDist = getMicrosForMiliSec( 250 );
 
   //
   // color definitions
   //
+  CRGB LEDStripe::inactive_colr{ appprefs::LED_COLOR_BLACK };
   CRGB LEDStripe::wlan_discon_colr{ appprefs::LED_COLOR_WLAN_DISCONN };
   CRGB LEDStripe::wlan_search_colr{ appprefs::LED_COLOR_WLAN_SEARCH };
   CRGB LEDStripe::wlan_connect_colr{ appprefs::LED_COLOR_WLAN_SEARCH };
   CRGB LEDStripe::wlan_connect_and_sync_colr{ appprefs::LED_COLOR_WLAN_CONNECT_AND_SYNC };
-  CRGB LEDStripe::wlan_fail_col{ appprefs::LED_COLOR_WLAN_FAIL };
-  CRGB LEDStripe::http_active{ appprefs::LED_COLOR_HTTP_ACTIVE };
+  CRGB LEDStripe::wlan_fail_colr{ appprefs::LED_COLOR_WLAN_FAIL };
+  CRGB LEDStripe::alert_idle_colr{ appprefs::LED_COLOR_ALERT_IDLE };
+  CRGB LEDStripe::alert_prepare_colr{ appprefs::LED_COLOR_ALERT_PREPARE };
+  CRGB LEDStripe::alert_running_colr{ appprefs::LED_COLOR_ALERT_RUNNING };
+  CRGB LEDStripe::alert_fail_colr{ appprefs::LED_COLOR_ALERT_FAIL };
+  CRGB LEDStripe::alert_run_and_fail{ appprefs::LED_COLOR_ALERT_RUN_AND_FAIL };
+  CRGB LEDStripe::http_active_colr{ appprefs::LED_COLOR_HTTP_ACTIVE };
 
   const char *LEDStripe::tag{ "ledstripe" };
   TaskHandle_t LEDStripe::taskHandle{ nullptr };
@@ -39,7 +46,7 @@ namespace alertclock
         .setCorrection( TypicalLEDStrip );
     FastLED.setBrightness( appprefs::LED_STRIP_BRIGHTNESS );
     LEDStripe::setLed( appprefs::LED_ALL, false, true );
-    LEDStripe::setLed( appprefs::LED_STATUS, LEDStripe::wlan_discon_colr, true );
+    LEDStripe::setLed( appprefs::LED_WLAN, LEDStripe::wlan_discon_colr, true );
     LEDStripe::start();
     elog.log( logger::DEBUG, "%s: initialized...", LEDStripe::tag );
   }
@@ -68,6 +75,7 @@ namespace alertclock
     using namespace appprefs;
     int64_t nextWLANLedActionTime{ WLANlongActionDist };
     int64_t nextHTTPLedActionTime{ HTTPActionDarkDist };
+    int64_t nextAlertStateActionTime{ AlertActionDarkDist };
     int64_t nowTime = esp_timer_get_time();
     int64_t nextMark =
         esp_timer_get_time() + getMicrosForMiliSec( appprefs::TASK_MARK_INTERVAL_MS + static_cast< int32_t >( random( 2000 ) ) );
@@ -90,6 +98,13 @@ namespace alertclock
         // time for http-indicator-action
         //
       }
+      if ( nextAlertStateActionTime < nowTime )
+      {
+        //
+        // make led alert-status things
+        //
+        nextAlertStateActionTime = LEDStripe::alertStateLoop( &led_changed );
+      }
       if ( led_changed )
       {
         // set LED'S
@@ -111,6 +126,57 @@ namespace alertclock
   }
 
   /**
+   * loop to compute LED for alert state
+   */
+  int64_t LEDStripe::alertStateLoop( bool *led_changed )
+  {
+    using namespace appprefs;
+    static bool stateLedSwitch{ true };
+    static volatile AlertState cAlertState{ AlertState::ALERT_UNKNOWN };
+    int64_t nextDist{ AlertActionDarkDist };
+    //
+    //
+    if ( cAlertState != StatusObject::getAlertState() )
+    {
+      *led_changed = true;
+      // mark state
+      cAlertState = StatusObject::getAlertState();
+      switch ( cAlertState )
+      {
+        case AlertState::ALERT_NONE:
+          LEDStripe::setLed( LED_ALERT, LEDStripe::alert_idle_colr, false );
+          break;
+
+        case AlertState::ALERT_PREPARING:
+          LEDStripe::setLed( LED_ALERT, LEDStripe::alert_prepare_colr, false );
+          break;
+
+        case AlertState::ALERT_RUNNING:
+          LEDStripe::setLed( LED_ALERT, LEDStripe::alert_running_colr, false );
+          break;
+
+        case AlertState::ALERT_FAIL:
+          LEDStripe::setLed( LED_ALERT, LEDStripe::alert_fail_colr, false );
+          nextDist = AlertActionDarkDist << 5;
+          break;
+
+        case AlertState::ALERT_RUN_AND_FAIL:
+          LEDStripe::setLed( LED_ALERT, LEDStripe::alert_run_and_fail, false );
+          nextDist = AlertActionDarkDist << 5;
+          break;
+
+        default:
+        case AlertState::ALERT_UNKNOWN:
+          LEDStripe::setLed( LED_ALERT, LEDStripe::alert_idle_colr, false );
+          break;
+      }
+    }
+    int64_t nextLoopTime = esp_timer_get_time() + nextDist;
+    stateLedSwitch = !stateLedSwitch;
+    return nextLoopTime;
+  }
+
+  /**
    * loop to compute LED for wlan state
    */
   int64_t LEDStripe::wlanStateLoop( bool *led_changed )
@@ -126,21 +192,21 @@ namespace alertclock
       switch ( cWlanState )
       {
         case WlanState::DISCONNECTED:
-          LEDStripe::setLed( LED_STATUS, LEDStripe::wlan_discon_colr, false );
+          LEDStripe::setLed( LED_WLAN, LEDStripe::wlan_discon_colr, false );
           break;
         case WlanState::SEARCHING:
-          LEDStripe::setLed( LED_STATUS, LEDStripe::wlan_search_colr, false );
+          LEDStripe::setLed( LED_WLAN, LEDStripe::wlan_search_colr, false );
           break;
         case WlanState::CONNECTED:
-          LEDStripe::setLed( LED_STATUS, LEDStripe::wlan_connect_colr, false );
+          LEDStripe::setLed( LED_WLAN, LEDStripe::wlan_connect_colr, false );
           break;
         case WlanState::TIMESYNCED:
-          LEDStripe::setLed( LED_STATUS, LEDStripe::wlan_connect_and_sync_colr, false );
+          LEDStripe::setLed( LED_WLAN, LEDStripe::wlan_connect_and_sync_colr, false );
           // do here nothing
           break;
         default:
         case WlanState::FAILED:
-          LEDStripe::setLed( LED_STATUS, LEDStripe::wlan_fail_col, false );
+          LEDStripe::setLed( LED_WLAN, LEDStripe::wlan_fail_colr, false );
           break;
       }
     }

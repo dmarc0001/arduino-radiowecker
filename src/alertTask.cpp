@@ -8,6 +8,7 @@
 namespace alertclock
 {
   using namespace logger;
+  using namespace soundtouch;
 
   const char *AlertTask::tag{ "alerttask" };
   bool AlertTask::isRunning{ false };
@@ -64,13 +65,50 @@ namespace alertclock
       //
       if ( setNextTimeAlertsLoop < currentTimeStamp )
       {
+        AlertState currState{ ALERT_NONE };
         //
         // loop over all alerts
         // maybe more than one, also on a esp32
         //
         for ( auto alert = AlertTask::activeAlertList.begin(); alert != AlertTask::activeAlertList.end(); ++alert )
         {
-          if ( !AlertTask::alertLoop( *alert ) )
+          SoundTouchDeviceRunningMode mode = AlertTask::alertLoop( *alert );
+          //
+          // try to set common alert state
+          //
+          // ALERT_PREPARING
+          // ALERT_RUNNING
+          // ALERT_FAIL
+          // ALERT_RUN_AND_FAIL
+          //
+          switch ( mode )
+          {
+            case ST_STATE_GET_INFOS:
+            case ST_STATE_INIT_ALERT:
+            case ST_STATE_WAIT_FOR_INIT_COMLETE:
+              if ( currState < ALERT_PREPARING )
+                currState = ALERT_PREPARING;
+              break;
+            case ST_STATE_RUNNING_ALERT:
+              if ( currState < ALERT_RUNNING )
+                currState = ALERT_RUNNING;
+              else if ( currState > ALERT_RUNNING )
+                currState = ALERT_RUN_AND_FAIL;
+              break;
+            case ST_STATE_END_ALERT:
+              break;
+            case ST_STATE_ERROR:
+              if ( currState == ALERT_RUNNING )
+                currState = ALERT_RUN_AND_FAIL;
+              else
+                currState = ALERT_FAIL;
+            default:
+              break;
+          }
+          //
+          // try to find out if an alert is bad or endet
+          //
+          if ( mode == ST_STATE_END_ALERT || mode == ST_STATE_ERROR )
           {
             //
             // if the return false, remove the alert smartpointer from the list
@@ -79,13 +117,14 @@ namespace alertclock
             // the marker "inUse" in alert entry wil reset below
             // if the destructor forgot this
             //
-
             elog.log( INFO, "%s: remove alert <%s> from active list!", AlertTask::tag, ( *alert )->getAlertName().c_str() );
             AlertTask::activeAlertList.erase( alert );
             break;
           }
         }
         setNextTimeAlertsLoop = currentTimeStamp + getMicrosForMiliSec( 250 );
+        // save this in the status object
+        StatusObject::setAlertState( currState );
       }
       //
       // then i have some time for checking all alerts :-)
@@ -244,7 +283,10 @@ namespace alertclock
     return true;
   }
 
-  bool AlertTask::alertLoop( soundtouch::SoundTouchAlertPtr _alert )
+  /**
+   * check an alert for his stati and make some actions
+   */
+  soundtouch::SoundTouchDeviceRunningMode AlertTask::alertLoop( soundtouch::SoundTouchAlertPtr _alert )
   {
     using namespace soundtouch;
     using namespace logger;
@@ -253,7 +295,7 @@ namespace alertclock
     static SoundTouchDeviceRunningMode oldMode{ ST_STATE_UNKNOWN };
     //
     if ( !_alert )
-      return false;
+      return ST_STATE_ERROR;
     switch ( _alert->getDeviceRunningMode() )
     {
       case ST_STATE_UNINITIALIZED:
@@ -276,7 +318,7 @@ namespace alertclock
         {
           // timeout!
           elog.log( ERROR, "main: device init TIMEOUT, Abort alert!" );
-          return false;
+          return ST_STATE_ERROR;
         }
         break;
       case ST_STATE_INIT_ALERT:
@@ -291,7 +333,7 @@ namespace alertclock
         {
           // timeout!
           elog.log( ERROR, "%s: device prepare TIMEOUT, Abort alert!", AlertTask::tag );
-          return false;
+          return ST_STATE_ERROR;
         }
         break;
       case ST_STATE_RUNNING_ALERT:
@@ -312,10 +354,10 @@ namespace alertclock
             //
             // no timeout time is outdated
             //
-            return true;
+            return ST_STATE_RUNNING_ALERT;
           }
           elog.log( INFO, "%s: device not running more, alert ends", AlertTask::tag );
-          return false;
+          return ST_STATE_ERROR;
         }
         if ( _alert->getPlayState() == WsPlayStatus::PLAY_STATE )
         {
@@ -326,10 +368,10 @@ namespace alertclock
         }
         break;
       default:
-        return _alert->checkRunningAlert();
+        return ST_STATE_ERROR;
         break;
     }
-    return true;
+    return ST_STATE_ERROR;
   }
 
   /**
