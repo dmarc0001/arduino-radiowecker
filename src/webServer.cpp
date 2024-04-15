@@ -89,10 +89,17 @@ namespace webserver
     elog.log( logger::DEBUG, "%s: api version 1 call <%s>", AlWebServer::tag, parameter );
     if ( parameter.equals( "alerts" ) )
     {
+      // get all alerts
       AlWebServer::apiAllAlertsGetHandler( request );
+    }
+    else if ( parameter.equals( "alert" ) )
+    {
+      // get one alert (GET + param alert=ALERTNAME )
+      AlWebServer::apiOneAlertsGetHandler( request );
     }
     else if ( parameter.equals( "devices" ) )
     {
+      // get a list of found devices
       AlWebServer::apiDevicesGetHandler( request );
     }
     else if ( parameter.equals( "version" ) )
@@ -268,9 +275,9 @@ namespace webserver
     cJSON_Delete( root );
   }
 
-/**
- * get all alerts
-*/
+  /**
+   * get all alerts
+   */
   void AlWebServer::apiAllAlertsGetHandler( AsyncWebServerRequest *request )
   {
     //
@@ -280,7 +287,6 @@ namespace webserver
     //
     // for all alerts
     //
-    int number{ 0 };
     for ( auto alert = StatusObject::alertList.begin(); alert != StatusObject::alertList.end(); alert++ )
     {
       //
@@ -288,7 +294,6 @@ namespace webserver
       //
       cJSON *devObj = cJSON_CreateObject();
       //
-      cJSON_AddStringToObject( devObj, "number", String( number++ ).c_str() );
       cJSON_AddStringToObject( devObj, "note", ( *alert )->note.c_str() );
       cJSON_AddStringToObject( devObj, "name", ( *alert )->name.c_str() );
       cJSON_AddBoolToObject( devObj, "enable", ( *alert )->enable );
@@ -320,29 +325,92 @@ namespace webserver
       cJSON_AddStringToObject( devObj, "devices", listJoinString.c_str() );
       // make timestamp to ascci
       char buf[ 32 ];
-      ltoa( ( *alert )->lastWriten , buf, 10 );
+      ltoa( ( *alert )->lastWriten, buf, 10 );
       cJSON_AddStringToObject( devObj, "lastWritten", buf );
       cJSON_AddItemToArray( root, devObj );
     }
-    const char *devices = cJSON_Print( root );
-    String alertsStr( devices );
+    const char *alerts = cJSON_Print( root );
+    String alertsStr( alerts );
     request->send( 200, "application/json", alertsStr );
-    free( ( void * ) devices );
+    free( ( void * ) alerts );
     cJSON_Delete( root );
   }
 
- void AlWebServer::apiOneAlertsGetHandler( AsyncWebServerRequest *request )
- {
-    // int params = request->params();
-    // String verb = request->pathArg( 0 );
-
-    if( request->hasParam("alert") )
+  /**
+   * get one alert
+   */
+  void AlWebServer::apiOneAlertsGetHandler( AsyncWebServerRequest *request )
+  {
+    String alertName{ "" };
+    bool hasError{ false };
+    if ( request->hasParam( "alert" ) )
     {
-      String alertNumStr = request->getParam( "alert" )->value();
-      int alertNum = alertNumStr.toInt();
+      alertName = request->getParam( "alert" )->value();
     }
-
- }
+    else
+    {
+      request->send( 500, "text/plain", "request one alert without alert name" );
+      return;
+    }
+    if ( !hasError )
+    {
+      //
+      // search for alert name
+      //
+      for ( auto alert = StatusObject::alertList.begin(); alert != StatusObject::alertList.end(); alert++ )
+      {
+        if ( ( *alert )->name.equals( alertName ) )
+        {
+          //
+          // i want to receive this alert
+          //
+          cJSON *root = cJSON_CreateObject();
+          //
+          cJSON_AddStringToObject( root, "note", ( *alert )->note.c_str() );
+          cJSON_AddStringToObject( root, "name", ( *alert )->name.c_str() );
+          cJSON_AddBoolToObject( root, "enable", ( *alert )->enable );
+          cJSON_AddBoolToObject( root, "deleted", false );
+          cJSON_AddStringToObject( root, "volume", String( ( *alert )->volume ).c_str() );
+          cJSON_AddBoolToObject( root, "raise", ( *alert )->raiseVol );
+          cJSON_AddStringToObject( root, "location", "" );
+          cJSON_AddStringToObject( root, "source", ( *alert )->source.c_str() );
+          cJSON_AddStringToObject( root, "duration", String( ( *alert )->duration ).c_str() );
+          cJSON_AddStringToObject( root, "sourceAccount", "" );
+          cJSON_AddStringToObject( root, "type", "" );
+          cJSON_AddStringToObject( root, "alertHour", String( ( *alert )->alertHour ).c_str() );
+          cJSON_AddStringToObject( root, "alertMinute", String( ( *alert )->alertMinute ).c_str() );
+          if ( ( *alert )->day == 255 )
+            cJSON_AddStringToObject( root, "day", "" );
+          else
+            cJSON_AddStringToObject( root, "day", String( ( *alert )->day ).c_str() );
+          if ( ( *alert )->month == 255 )
+            cJSON_AddStringToObject( root, "month", "" );
+          else
+            cJSON_AddStringToObject( root, "month", String( ( *alert )->month ).c_str() );
+          // days enum-vector to string
+          String listJoinString;
+          AlWebServer::makeDaysString( ( *alert )->days, listJoinString );
+          cJSON_AddStringToObject( root, "days", listJoinString.c_str() );
+          listJoinString.clear();
+          // devices string-vector to String
+          AlWebServer::makeDevicesString( ( *alert )->devices, listJoinString );
+          cJSON_AddStringToObject( root, "devices", listJoinString.c_str() );
+          // make timestamp to ascci
+          char buf[ 32 ];
+          ltoa( ( *alert )->lastWriten, buf, 10 );
+          cJSON_AddStringToObject( root, "lastWritten", buf );
+          const char *alert = cJSON_Print( root );
+          String alertsStr( alert );
+          request->send( 200, "application/json", alertsStr );
+          free( ( void * ) alert );
+          cJSON_Delete( root );
+          return;
+        }
+      }
+      request->send( 500, "text/plain", "requested alert not found" );
+    }
+    request->send( 500, "text/plain", "error while request one alert" );
+  }
 
   /**
    * ask for devices, found from mdns

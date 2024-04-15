@@ -42,9 +42,9 @@ namespace alertclock
         //
         // every element
         //
-        AlertEntryPtr entry = std::make_shared< AlertEntry >();
-        entry->name = AlertConfObj::getValueFromJsonObj( "name", elem );
-        elog.log( DEBUG, "%s: alert <%s>...", AlertConfObj::tag, entry->name.c_str() );
+        String aName( AlertConfObj::getValueFromJsonObj( "name", elem ));
+        AlertEntryPtr entry = std::make_shared< AlertEntry >( aName );
+        elog.log( DEBUG, "%s: alert <%s>...", AlertConfObj::tag, aName.c_str() );
         entry->volume = static_cast< uint8_t >( AlertConfObj::getValueFromJsonObj( "volume", elem ).toInt() );
         entry->location = AlertConfObj::getValueFromJsonObj( "location", elem );
         entry->source = AlertConfObj::getValueFromJsonObj( "source", elem );

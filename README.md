@@ -5,8 +5,11 @@
 - alerts on bose soundtouch devices
 
 - small api for requests (return json)
-  - TODO: /api/v1/version: software version
-  - TODO: /api/v1/info : idf/platformio version, count of cpu cores
+  - /api/v1/version: software version
+  - /api/v1/info : idf/platformio version, count of cpu cores
+  - /api/v1/alerts : get all alerts
+  - /api/v1/devices : get all devices where found via mDNS
+  - /api/v1/alert=alert=alert_XX : get one alert
   - TODO: /api/v1/set-loglevel?level=7 : set controller loglevel, only app
 
 

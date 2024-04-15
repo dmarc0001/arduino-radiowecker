@@ -122,8 +122,7 @@ void addTestAlert()
   //
   // create testalert
   //
-  AlertEntryPtr alert = std::make_shared< AlertEntry >();
-  alert->name = "alert_98";                                   //! name of the alert
+  AlertEntryPtr alert = std::make_shared< AlertEntry >("alert_98");
   alert->volume = 21;                                         //! volume to weak up
   alert->location = "";                                       //! have to read in manual api
   alert->source = "PRESET_1";                                 //! preset or string to source
@@ -163,8 +162,7 @@ void addTestAlert()
   //
   // create testalert
   //
-  alert = std::make_shared< AlertEntry >();
-  alert->name = "alert_99";                                   //! name of the alert
+  alert = std::make_shared< AlertEntry >("alert_99");
   alert->volume = 23;                                         //! volume to weak up
   alert->location = "";                                       //! have to read in manual api
   alert->source = "PRESET_4";                                 //! preset or string to source

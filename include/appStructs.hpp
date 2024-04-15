@@ -82,7 +82,7 @@ namespace alertclock
   class AlertEntry
   {
     public:
-    String name;                //! name of the alert
+    const String name;          //! name of the alert
     uint8_t volume;             //! volume to weak up
     String location;            //! have to read in manual api
     String source;              //! preset or string to source
@@ -100,6 +100,9 @@ namespace alertclock
     uint8_t month{ 255 };       //! if on day, month number (1-12)
     bool inUse{ false };        //! an alert is running
     time_t lastWriten;          //! last config written
+    explicit AlertEntry( const String _name ) : name(_name)
+    {
+    };
   };
 
 }  // namespace alertclock
