@@ -26,6 +26,7 @@ namespace webserver
     static void apiSystemInfoGetHandler( AsyncWebServerRequest * );               //! deliver server info
     static void apiVersionInfoGetHandler( AsyncWebServerRequest * );              //! deliver esp infos
     static void apiAllAlertsGetHandler( AsyncWebServerRequest * );                //! deliver all alerts
+    static void apiOneAlertsGetHandler( AsyncWebServerRequest * );                //! deliver all alerts
     static void apiDevicesGetHandler( AsyncWebServerRequest * );                  //! deliver all devices
     static void deliverFileToHttpd( String &, AsyncWebServerRequest * );          //! deliver content file via http
     static void handleNotPhysicFileSources( String &, AsyncWebServerRequest * );  //! handle virtual files/paths

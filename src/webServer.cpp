@@ -268,6 +268,9 @@ namespace webserver
     cJSON_Delete( root );
   }
 
+/**
+ * get all alerts
+*/
   void AlWebServer::apiAllAlertsGetHandler( AsyncWebServerRequest *request )
   {
     //
@@ -315,6 +318,10 @@ namespace webserver
       // devices string-vector to String
       AlWebServer::makeDevicesString( ( *alert )->devices, listJoinString );
       cJSON_AddStringToObject( devObj, "devices", listJoinString.c_str() );
+      // make timestamp to ascci
+      char buf[ 32 ];
+      ltoa( ( *alert )->lastWriten , buf, 10 );
+      cJSON_AddStringToObject( devObj, "lastWritten", buf );
       cJSON_AddItemToArray( root, devObj );
     }
     const char *devices = cJSON_Print( root );
@@ -323,6 +330,19 @@ namespace webserver
     free( ( void * ) devices );
     cJSON_Delete( root );
   }
+
+ void AlWebServer::apiOneAlertsGetHandler( AsyncWebServerRequest *request )
+ {
+    // int params = request->params();
+    // String verb = request->pathArg( 0 );
+
+    if( request->hasParam("alert") )
+    {
+      String alertNumStr = request->getParam( "alert" )->value();
+      int alertNum = alertNumStr.toInt();
+    }
+
+ }
 
   /**
    * ask for devices, found from mdns

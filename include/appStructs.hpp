@@ -99,6 +99,7 @@ namespace alertclock
     uint8_t day{ 255 };         //! if on a day, day number (1-31)
     uint8_t month{ 255 };       //! if on day, month number (1-12)
     bool inUse{ false };        //! an alert is running
+    time_t lastWriten;          //! last config written
   };
 
 }  // namespace alertclock

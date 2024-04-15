@@ -123,7 +123,7 @@ void addTestAlert()
   // create testalert
   //
   AlertEntryPtr alert = std::make_shared< AlertEntry >();
-  alert->name = "alert_00";                                   //! name of the alert
+  alert->name = "alert_98";                                   //! name of the alert
   alert->volume = 21;                                         //! volume to weak up
   alert->location = "";                                       //! have to read in manual api
   alert->source = "PRESET_1";                                 //! preset or string to source

@@ -74,6 +74,20 @@ namespace alertclock
   void StatusObject::setWlanState( WlanState _state )
   {
     StatusObject::wlanState = _state;
+    if ( _state == WlanState::TIMESYNCED )
+    {
+      //
+      // make an value for latest write
+      // its important when tow users try to write an alert
+      //
+      time_t tm;
+      time( &tm );
+      //
+      for ( auto alert = StatusObject::alertList.begin(); alert != StatusObject::alertList.end(); alert++ )
+      {
+        ( *alert )->lastWriten = tm;
+      }
+    }
   }
 
   /**

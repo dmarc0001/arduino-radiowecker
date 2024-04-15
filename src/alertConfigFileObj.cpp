@@ -88,6 +88,7 @@ namespace alertclock
         //
         String alertDevicesListStr = AlertConfObj::getValueFromJsonObj( "devices", elem );
         entry->devices = AlertConfObj::getDevicesListForAlert( alertDevicesListStr );
+        entry->lastWriten = 0L;
         StatusObject::alertList.push_back( entry );
         delay( 60 );
       }
