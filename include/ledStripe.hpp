@@ -42,6 +42,7 @@ namespace alertclock
     static void ledTask( void * );            //! the task fir LED
     static int64_t wlanStateLoop( bool * );   //! check wlan state
     static int64_t alertStateLoop( bool * );  //! check alert state
+    static int64_t httpStateLoop( bool * );   //! chcek if http accessed
   };
 
 }  // namespace alertclock

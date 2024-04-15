@@ -97,6 +97,7 @@ namespace alertclock
         //
         // time for http-indicator-action
         //
+        nextHTTPLedActionTime = LEDStripe::httpStateLoop( &led_changed );
       }
       if ( nextAlertStateActionTime < nowTime )
       {
@@ -123,6 +124,55 @@ namespace alertclock
             esp_timer_get_time() + getMicrosForMiliSec( appprefs::TASK_MARK_INTERVAL_MS + static_cast< int32_t >( random( 2000 ) ) );
       }
     }
+  }
+
+  /**
+   * loop if http used, let the led flash
+   */
+  int64_t LEDStripe::httpStateLoop( bool *led_changed )
+  {
+    using namespace appprefs;
+    static bool stateLedSwitch{ false };
+    int64_t dist{ HTTPActionFlashDist };
+
+    //
+    // is http active?
+    //
+    bool isActive = StatusObject::getHttpActive();
+    if ( isActive )
+    {
+      //
+      // is LED OFF?
+      //
+      if ( !stateLedSwitch )
+      {
+        *led_changed = true;
+        stateLedSwitch = true;
+        LEDStripe::setLed( LED_HTTP, LEDStripe::http_active_colr, false );
+      }
+      // now is false
+      StatusObject::setHttpActive( false );
+      //
+      // distance to next test
+      //
+      dist = HTTPActionDarkDist;
+    }
+    else
+    {
+      //
+      // is LED ON?
+      //
+      if ( stateLedSwitch )
+      {
+        *led_changed = true;
+        stateLedSwitch = false;
+        LEDStripe::setLed( LED_HTTP, LEDStripe::inactive_colr, false );
+        // LEDStripe::setLed( LED_HTTP, LEDStripe::alert_fail_colr, false );
+        dist = HTTPActionFlashDist;
+      }
+    }
+    int64_t nextLoopTime = esp_timer_get_time() + dist;
+    return nextLoopTime;
   }
 
   /**

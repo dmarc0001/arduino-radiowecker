@@ -22,6 +22,6 @@ namespace appprefs
   constexpr uint32_t LED_COLOR_ALERT_FAIL{ 0xFF0000 };
   constexpr uint32_t LED_COLOR_ALERT_RUN_AND_FAIL{ 0xFFff00 };
 
-  constexpr uint32_t LED_COLOR_HTTP_ACTIVE{ 0x808080 };
+  constexpr uint32_t LED_COLOR_HTTP_ACTIVE{ 0x50B050 };
 
 }  // namespace appprefs

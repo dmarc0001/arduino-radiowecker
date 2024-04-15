@@ -270,7 +270,7 @@ namespace alertclock
   AlertDayList AlertConfObj::getAlertDaysList( const String &dayListStr )
   {
     AlertDayList days;
-    int strLen = dayListStr.length();
+    const int strLen = dayListStr.length();
 
     //
     // is zero len, do nor work, be lazy
@@ -281,7 +281,7 @@ namespace alertclock
     // start at idx 0
     //
     int strIndex = 0;
-    elog.log( DEBUG, "%s: days: <%s>...", AlertConfObj::tag, dayListStr.c_str() );
+    // elog.log( DEBUG, "%s: days: <%s>, len <%d>...", AlertConfObj::tag, dayListStr.c_str(), strLen );
     while ( strIndex < strLen )
     {
       String dayStr;
@@ -289,11 +289,12 @@ namespace alertclock
       if ( idx < 0 )
       {
         // maybe the once or last pair of chars
-        dayStr = dayListStr.substring( strIndex, 2 );
+        // than i'll take all or the last part
+        dayStr = dayListStr.substring( strIndex /*, 2*/ );
       }
-      if ( idx > 0 )
+      else
       {
-        // comma found at index idx
+        // comma found at index greater then 0
         // extract found
         dayStr = dayListStr.substring( strIndex, idx );
       }
@@ -327,11 +328,16 @@ namespace alertclock
       {
         days.push_back( AlertDays::su );
       }
-      strIndex += idx + 1;
+      else
+      {
+        elog.log( ERROR, "%s: not known weekday in config: <%s>!", AlertConfObj::tag, dayStr.c_str() );
+      }
+      strIndex = abs( idx ) + 1;
       // if these the once or last pair of chars
       if ( idx < 0 )
         break;
     }
+    // elog.log( DEBUG, "%s: days vector is: <%d>...", AlertConfObj::tag, days.size() );
     return days;
   }
 

@@ -87,7 +87,15 @@ namespace webserver
     StatusObject::setHttpActive( true );
     String parameter = request->pathArg( 0 );
     elog.log( logger::DEBUG, "%s: api version 1 call <%s>", AlWebServer::tag, parameter );
-    if ( parameter.equals( "version" ) )
+    if ( parameter.equals( "alerts" ) )
+    {
+      AlWebServer::apiAllAlertsGetHandler( request );
+    }
+    else if ( parameter.equals( "devices" ) )
+    {
+      AlWebServer::apiDevicesGetHandler( request );
+    }
+    else if ( parameter.equals( "version" ) )
     {
       AlWebServer::apiVersionInfoGetHandler( request );
     }
@@ -229,6 +237,9 @@ namespace webserver
     ESP.restart();
   }
 
+  /**
+   * get system info as json
+   */
   void AlWebServer::apiSystemInfoGetHandler( AsyncWebServerRequest *request )
   {
     cJSON *root = cJSON_CreateObject();
@@ -254,6 +265,99 @@ namespace webserver
     String info( sys_info );
     request->send( 200, "application/json", info );
     free( ( void * ) sys_info );
+    cJSON_Delete( root );
+  }
+
+  void AlWebServer::apiAllAlertsGetHandler( AsyncWebServerRequest *request )
+  {
+    //
+    // create an json Array for alerts
+    //
+    cJSON *root = cJSON_CreateArray();
+    //
+    // for all alerts
+    //
+    int number{ 0 };
+    for ( auto alert = StatusObject::alertList.begin(); alert != StatusObject::alertList.end(); alert++ )
+    {
+      //
+      // create json Object for root Array and every alert
+      //
+      cJSON *devObj = cJSON_CreateObject();
+      //
+      cJSON_AddStringToObject( devObj, "number", String( number++ ).c_str() );
+      cJSON_AddStringToObject( devObj, "note", ( *alert )->note.c_str() );
+      cJSON_AddStringToObject( devObj, "name", ( *alert )->name.c_str() );
+      cJSON_AddBoolToObject( devObj, "enable", ( *alert )->enable );
+      cJSON_AddBoolToObject( devObj, "deleted", false );
+      cJSON_AddStringToObject( devObj, "volume", String( ( *alert )->volume ).c_str() );
+      cJSON_AddBoolToObject( devObj, "raise", ( *alert )->raiseVol );
+      cJSON_AddStringToObject( devObj, "location", "" );
+      cJSON_AddStringToObject( devObj, "source", ( *alert )->source.c_str() );
+      cJSON_AddStringToObject( devObj, "duration", String( ( *alert )->duration ).c_str() );
+      cJSON_AddStringToObject( devObj, "sourceAccount", "" );
+      cJSON_AddStringToObject( devObj, "type", "" );
+      cJSON_AddStringToObject( devObj, "alertHour", String( ( *alert )->alertHour ).c_str() );
+      cJSON_AddStringToObject( devObj, "alertMinute", String( ( *alert )->alertMinute ).c_str() );
+      if ( ( *alert )->day == 255 )
+        cJSON_AddStringToObject( devObj, "day", "" );
+      else
+        cJSON_AddStringToObject( devObj, "day", String( ( *alert )->day ).c_str() );
+      if ( ( *alert )->month == 255 )
+        cJSON_AddStringToObject( devObj, "month", "" );
+      else
+        cJSON_AddStringToObject( devObj, "month", String( ( *alert )->month ).c_str() );
+      // days enum-vector to string
+      String listJoinString;
+      AlWebServer::makeDaysString( ( *alert )->days, listJoinString );
+      cJSON_AddStringToObject( devObj, "days", listJoinString.c_str() );
+      listJoinString.clear();
+      // devices string-vector to String
+      AlWebServer::makeDevicesString( ( *alert )->devices, listJoinString );
+      cJSON_AddStringToObject( devObj, "devices", listJoinString.c_str() );
+      cJSON_AddItemToArray( root, devObj );
+    }
+    const char *devices = cJSON_Print( root );
+    String alertsStr( devices );
+    request->send( 200, "application/json", alertsStr );
+    free( ( void * ) devices );
+    cJSON_Delete( root );
+  }
+
+  /**
+   * ask for devices, found from mdns
+   */
+  void AlWebServer::apiDevicesGetHandler( AsyncWebServerRequest *request )
+  {
+    //
+    // create an json Array for devices
+    //
+    cJSON *root = cJSON_CreateArray();
+    //
+    // for all devices
+    //
+    for ( auto device = StatusObject::devList.begin(); device != StatusObject::devList.end(); device++ )
+    {
+      //
+      // create json Object for root Array and every device
+      //
+      cJSON *devObj = cJSON_CreateObject();
+      //
+      // vrearte items in device object
+      //
+      cJSON_AddStringToObject( devObj, "name", ( *device )->name.c_str() );
+      cJSON_AddStringToObject( devObj, "id", ( *device )->id.c_str() );
+      cJSON_AddStringToObject( devObj, "type", ( *device )->type.c_str() );
+      cJSON_AddStringToObject( devObj, "note", ( *device )->note.c_str() );
+      // cJSON_AddStringToObject( devObj, "ip", (*device)->note.c_str() );
+      // cJSON_AddStringToObject( devObj, "webport", (*device)->note.c_str() );
+      // cJSON_AddStringToObject( devObj, "wsport", (*device)->note.c_str() );
+      cJSON_AddItemToArray( root, devObj );
+    }
+    const char *devices = cJSON_Print( root );
+    String devicesStr( devices );
+    request->send( 200, "application/json", devicesStr );
+    free( ( void * ) devices );
     cJSON_Delete( root );
   }
 
@@ -398,6 +502,58 @@ namespace webserver
     //
     contentType = "text/plain";
     return type;
+  }
+
+  /**
+   * make a string from devices list of strings
+   */
+  void AlWebServer::makeDevicesString( AlertDeviceIdList &list, String &retString )
+  {
+    for ( auto dev = list.begin(); dev != list.end(); dev++ )
+    {
+      if ( retString.isEmpty() )
+        retString = *dev;
+      else
+        retString += "," + *dev;
+    }
+  }
+
+  /**
+   * make a string of weekdays, if there
+   */
+  void AlWebServer::makeDaysString( AlertDayList &list, String &retString )
+  {
+    for ( auto day = list.begin(); day != list.end(); day++ )
+    {
+      String loc_day;
+      switch ( *day )
+      {
+        case AlertDays::mo:
+          loc_day = "mo";
+          break;
+        case AlertDays::tu:
+          loc_day = "tu";
+          break;
+        case AlertDays::we:
+          loc_day = "we";
+          break;
+        case AlertDays::th:
+          loc_day = "th";
+          break;
+        case AlertDays::fr:
+          loc_day = "fr";
+          break;
+        case AlertDays::sa:
+          loc_day = "sa";
+          break;
+        case AlertDays::su:
+          loc_day = "su";
+          break;
+      }
+      if ( !retString.isEmpty() )
+        retString += ",";
+      retString += loc_day;
+    }
   }
 
 }  // namespace webserver

@@ -3,6 +3,7 @@
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #include "ESPAsyncWebServer.h"
+#include "appStructs.hpp"
 
 namespace webserver
 {
@@ -24,12 +25,15 @@ namespace webserver
     static void onFilesReq( AsyncWebServerRequest * );                            //! on some file
     static void apiSystemInfoGetHandler( AsyncWebServerRequest * );               //! deliver server info
     static void apiVersionInfoGetHandler( AsyncWebServerRequest * );              //! deliver esp infos
-    static void apiRestHandlerInterval( AsyncWebServerRequest * );                //! deliver measure interval
+    static void apiAllAlertsGetHandler( AsyncWebServerRequest * );                //! deliver all alerts
+    static void apiDevicesGetHandler( AsyncWebServerRequest * );                  //! deliver all devices
     static void deliverFileToHttpd( String &, AsyncWebServerRequest * );          //! deliver content file via http
     static void handleNotPhysicFileSources( String &, AsyncWebServerRequest * );  //! handle virtual files/paths
     static String setContentTypeFromFile( String &, const String & );             //! find content type
     static void onNotFound( AsyncWebServerRequest * );                            //! if page not found
     static void onServerError( AsyncWebServerRequest *, int, const String & );    //! if server error
+    static void makeDaysString( alertclock::AlertDayList &, String & );           //! make a string of weekdays, if there
+    static void makeDevicesString( alertclock::AlertDeviceIdList &, String & );   //! make a string from devices list of strings
   };
 
-}  // namespace EnvServer
+}  // namespace webserver

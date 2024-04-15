@@ -170,7 +170,7 @@ void addTestAlert()
   alert->source = "PRESET_4";                                 //! preset or string to source
   alert->raiseVol = false;                                    //! should volume raisng on? down
   alert->duration = 90;                                       //! length in secounds
-  alert->days = { mo, tu, we, tu, fr, sa, su };               //! if present, days to alert
+  alert->days = { mo, tu, we, th, fr, sa, su };               //! if present, days to alert
   alert->devices.push_back( device.id );                      //! which devices?
   alert->enable = true;                                       //! alert enable?
   alert->note = "Test alert 002-without raise vol ";          //! user note (cause etc)
@@ -304,7 +304,7 @@ void loop()
     yield();
   }
   //
-  // check if the state chenged
+  // check if the state changed
   //
   if ( connected != StatusObject::getWlanState() )
   {
@@ -324,6 +324,7 @@ void loop()
         webserver::AlWebServer::start();
         break;
       case WlanState::TIMESYNCED:
+        webserver::AlWebServer::start();
         elog.log( INFO, "main: timesynced. enable alerts..." );
         //
         // DEBUG: testalert add
