@@ -42,6 +42,11 @@ namespace alertclock
    */
   void LEDStripe::init()
   {
+    //
+    // first, init LED power
+    //
+    pinMode( appprefs::LED_STRIPE_POWER, OUTPUT );
+    digitalWrite( appprefs::LED_STRIPE_POWER, HIGH );
     FastLED.addLeds< WS2811, appprefs::LED_STRIPE_RMT_TX_GPIO, appprefs::LED_RGB_ORDER >( leds, appprefs::LED_STRIPE_COUNT )
         .setCorrection( TypicalLEDStrip );
     FastLED.setBrightness( appprefs::LED_STRIP_BRIGHTNESS );

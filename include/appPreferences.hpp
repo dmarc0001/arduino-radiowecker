@@ -28,11 +28,12 @@ namespace appprefs
   constexpr const char *ALERT_CONFIG{ "/alert.json" };         //! json file, includes alerts
   constexpr const char *DEVICES_CONFIG{ "/devices.json" };     // json file describes devices
   constexpr const uint16_t SYSLOG_PRIO{ 8 };                   //! standart syslog prio (user)
-  constexpr const uint16_t SYSLOG_PROTO{ 0 };                  //! standart syslog protocol (IETF)
+  constexpr const uint16_t SYSLOG_PROTO{ 0 };                  //! standart syslog protocol (IETF)0
   constexpr const char *WEB_PATH{ "/spiffs" };                 //! virtual path wegserver
   constexpr const char *WEB_PARTITION_LABEL{ "mydata" };       //! label of the spiffs or null
   constexpr uint32_t WIFI_MAXIMUM_RETRY{ 5 };                  //! Max connection retries
   constexpr wifi_auth_mode_t WIFI_AUTH{ WIFI_AUTH_WPA2_PSK };  //! wifi auth method
+  constexpr gpio_num_t LED_STRIPE_POWER = GPIO_NUM_1;          //! Power switch LEDfge56j7zk8ui#
   constexpr uint8_t LED_STRIPE_COUNT = 3;                      //! count of LED
   constexpr gpio_num_t LED_STRIPE_RMT_TX_GPIO = GPIO_NUM_4;    //! (internal GPIO_NUM_18) control pin GPIO für led control
   constexpr int LED_STRIP_BRIGHTNESS = 255;                    //! brightness led stripe
