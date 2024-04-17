@@ -103,14 +103,15 @@ void loop()
   //
   // for config saving
   //
-  if( setNextTimeWriteConfig < esp_timer_get_time() )
+  if ( setNextTimeWriteConfig < esp_timer_get_time() )
   {
     //
     // check if the config was changed
     //
-    if( StatusObject::getWasConfigChanged() )
+    if ( StatusObject::getWasConfigChanged() )
     {
-      StatusObject::setWasConfigChanged(false);
+      StatusObject::setWasConfigChanged( false );
+      setNextTimeWriteConfig = esp_timer_get_time() + getMicrosForSec( 10 );
       yield();
       AlertConfObj::saveConfig();
       yield();
