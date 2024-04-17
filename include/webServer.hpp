@@ -33,8 +33,6 @@ namespace webserver
     static String setContentTypeFromFile( String &, const String & );             //! find content type
     static void onNotFound( AsyncWebServerRequest * );                            //! if page not found
     static void onServerError( AsyncWebServerRequest *, int, const String & );    //! if server error
-    static void makeDaysString( alertclock::AlertDayList &, String & );           //! make a string of weekdays, if there
-    static void makeDevicesString( alertclock::AlertDeviceIdList &, String & );   //! make a string from devices list of strings
   };
 
 }  // namespace webserver

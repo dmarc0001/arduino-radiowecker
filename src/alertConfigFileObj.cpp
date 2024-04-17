@@ -1,6 +1,7 @@
 #include "alertConfigFileObj.hpp"
 #include "statusObject.hpp"
 #include "statics.hpp"
+#include "alertConvert.hpp"
 
 namespace alertclock
 {
@@ -15,6 +16,86 @@ namespace alertclock
       if ( AlertConfObj::readAlertConfig( appprefs::LocalPrefs::alertConfigFile ) )
         return true;
     return false;
+  }
+
+  bool AlertConfObj::saveConfig()
+  {
+    bool isOkay{ true };
+
+    elog.log( INFO, "%s: save alert config...", AlertConfObj::tag );
+    if ( xSemaphoreTake( StatusObject::configFileSem, pdMS_TO_TICKS( 6000 ) ) == pdTRUE )
+    {
+      //
+      // save data
+      // first create an json Array for alerts
+      //
+      cJSON *root = cJSON_CreateArray();
+      for ( auto alertIt = StatusObject::alertList.begin(); alertIt != StatusObject::alertList.end(); alertIt++ )
+      {
+        //
+        // create json Object for root Array and every alert
+        //
+        cJSON *devObj = cJSON_CreateObject();
+        //
+        cJSON_AddStringToObject( devObj, "note", ( *alertIt )->note.c_str() );
+        cJSON_AddStringToObject( devObj, "name", ( *alertIt )->name.c_str() );
+        cJSON_AddBoolToObject( devObj, "enable", ( *alertIt )->enable );
+        cJSON_AddStringToObject( devObj, "volume", String( ( *alertIt )->volume ).c_str() );
+        cJSON_AddBoolToObject( devObj, "raise", ( *alertIt )->raiseVol );
+        cJSON_AddStringToObject( devObj, "location", "" );
+        cJSON_AddStringToObject( devObj, "source", ( *alertIt )->source.c_str() );
+        cJSON_AddStringToObject( devObj, "duration", String( ( *alertIt )->duration ).c_str() );
+        cJSON_AddStringToObject( devObj, "sourceAccount", "" );
+        cJSON_AddStringToObject( devObj, "type", "" );
+        cJSON_AddStringToObject( devObj, "alertHour", String( ( *alertIt )->alertHour ).c_str() );
+        cJSON_AddStringToObject( devObj, "alertMinute", String( ( *alertIt )->alertMinute ).c_str() );
+        if ( ( *alertIt )->day == 255 )
+          cJSON_AddStringToObject( devObj, "day", "" );
+        else
+          cJSON_AddStringToObject( devObj, "day", String( ( *alertIt )->day ).c_str() );
+        if ( ( *alertIt )->month == 255 )
+          cJSON_AddStringToObject( devObj, "month", "" );
+        else
+          cJSON_AddStringToObject( devObj, "month", String( ( *alertIt )->month ).c_str() );
+        // days enum-vector to string
+        String listJoinString;
+        AlertConvert::makeDaysString( ( *alertIt )->days, listJoinString );
+        cJSON_AddStringToObject( devObj, "days", listJoinString.c_str() );
+        listJoinString.clear();
+        // devices string-vector to String
+        AlertConvert::makeDevicesString( ( *alertIt )->devices, listJoinString );
+        cJSON_AddStringToObject( devObj, "devices", listJoinString.c_str() );
+      }
+      const char *alerts = cJSON_Print( root );
+      String alertsStr( alerts );
+      //
+      // TODO: write to file
+      //
+      File fd;
+      elog.log( DEBUG, "%s: open %s...", AlertConfObj::tag, appprefs::LocalPrefs::alertConfigFile );
+      fd = SPIFFS.open( appprefs::LocalPrefs::alertConfigFile, "w", true );
+      if ( !fd )
+        isOkay = false;
+      // checkpoint
+      elog.log( DEBUG, "%s: open %s...OK", AlertConfObj::tag, appprefs::LocalPrefs::alertConfigFile );
+      if ( isOkay )
+      {
+        fd.print( alertsStr );
+        fd.flush();
+        fd.close();
+      }
+      else
+      {
+        elog.log( ERROR, "%s: save alert config tailed, can't open file <%s>...", AlertConfObj::tag,
+                  appprefs::LocalPrefs::alertConfigFile );
+      }
+      free( ( void * ) alerts );
+      cJSON_Delete( root );
+      xSemaphoreGive( StatusObject::configFileSem );
+      return isOkay;
+    }
+    elog.log( ERROR, "%s: save alert config tailed, can't obtain semaphore...", AlertConfObj::tag );
+    return isOkay;
   }
 
   /**
@@ -42,7 +123,7 @@ namespace alertclock
         //
         // every element
         //
-        String aName( AlertConfObj::getValueFromJsonObj( "name", elem ));
+        String aName( AlertConfObj::getValueFromJsonObj( "name", elem ) );
         AlertEntryPtr entry = std::make_shared< AlertEntry >( aName );
         elog.log( DEBUG, "%s: alert <%s>...", AlertConfObj::tag, aName.c_str() );
         entry->volume = static_cast< uint8_t >( AlertConfObj::getValueFromJsonObj( "volume", elem ).toInt() );
@@ -80,14 +161,14 @@ namespace alertclock
         // string with comma to vactor of enum
         //
         String alertDaysListStr = AlertConfObj::getValueFromJsonObj( "days", elem );
-        entry->days = AlertConfObj::getAlertDaysList( alertDaysListStr );
+        entry->days = AlertConvert::getAlertDaysList( alertDaysListStr );
         //
         // also special
         // string with comma to vector of devices
         // not validation of the devices yet
         //
         String alertDevicesListStr = AlertConfObj::getValueFromJsonObj( "devices", elem );
-        entry->devices = AlertConfObj::getDevicesListForAlert( alertDevicesListStr );
+        entry->devices = AlertConvert::getDevicesListForAlert( alertDevicesListStr );
         entry->lastWriten = 0L;
         StatusObject::alertList.push_back( entry );
         delay( 60 );
@@ -98,20 +179,6 @@ namespace alertclock
     }
     return retVal;
   }  // namespace AlarmClockSrv
-
-  /**
-   * save curent alerts to a json file
-   * TODO: implement
-   */
-  bool AlertConfObj::saveAlertConfig( const String & )
-  {
-    if ( xSemaphoreTake( StatusObject::configFileSem, pdMS_TO_TICKS( 6000 ) ) == pdTRUE )
-    {
-      xSemaphoreGive( StatusObject::configFileSem );
-      return true;
-    }
-    return false;
-  }
 
   /**
    * read devices list from file into devices list, initial load
@@ -265,125 +332,4 @@ namespace alertclock
     ;
   }
 
-  /**
-   * mak a enum list fo weekdays for an alert
-   */
-  AlertDayList AlertConfObj::getAlertDaysList( const String &dayListStr )
-  {
-    AlertDayList days;
-    const int strLen = dayListStr.length();
-
-    //
-    // is zero len, do nor work, be lazy
-    //
-    if ( strLen == 0 )
-      return days;
-    //
-    // start at idx 0
-    //
-    int strIndex = 0;
-    // elog.log( DEBUG, "%s: days: <%s>, len <%d>...", AlertConfObj::tag, dayListStr.c_str(), strLen );
-    while ( strIndex < strLen )
-    {
-      String dayStr;
-      int idx = dayListStr.indexOf( ',', strIndex );
-      if ( idx < 0 )
-      {
-        // maybe the once or last pair of chars
-        // than i'll take all or the last part
-        dayStr = dayListStr.substring( strIndex /*, 2*/ );
-      }
-      else
-      {
-        // comma found at index greater then 0
-        // extract found
-        dayStr = dayListStr.substring( strIndex, idx );
-      }
-      // trim string (spaces remove)
-      dayStr.trim();
-      if ( dayStr.equals( "mo" ) )
-      {
-        days.push_back( AlertDays::mo );
-      }
-      else if ( dayStr.equals( "tu" ) )
-      {
-        days.push_back( AlertDays::tu );
-      }
-      else if ( dayStr.equals( "we" ) )
-      {
-        days.push_back( AlertDays::we );
-      }
-      else if ( dayStr.equals( "th" ) )
-      {
-        days.push_back( AlertDays::th );
-      }
-      else if ( dayStr.equals( "fr" ) )
-      {
-        days.push_back( AlertDays::fr );
-      }
-      else if ( dayStr.equals( "sa" ) )
-      {
-        days.push_back( AlertDays::sa );
-      }
-      else if ( dayStr.equals( "su" ) )
-      {
-        days.push_back( AlertDays::su );
-      }
-      else
-      {
-        elog.log( ERROR, "%s: not known weekday in config: <%s>!", AlertConfObj::tag, dayStr.c_str() );
-      }
-      strIndex = abs( idx ) + 1;
-      // if these the once or last pair of chars
-      if ( idx < 0 )
-        break;
-    }
-    // elog.log( DEBUG, "%s: days vector is: <%d>...", AlertConfObj::tag, days.size() );
-    return days;
-  }
-
-  /**
-   * make a list of decice-id's for an alert
-   */
-  AlertDeviceIdList AlertConfObj::getDevicesListForAlert( const String &listStr )
-  {
-    AlertDeviceIdList deviceList;
-    int strLen = listStr.length();
-
-    //
-    // is zero len, do nor work, be lazy
-    //
-    if ( strLen == 0 )
-      return deviceList;
-    //
-    // start at idx 0
-    //
-    int strIndex = 0;
-    elog.log( DEBUG, "%s: devices: <%s>...", AlertConfObj::tag, listStr.c_str() );
-    while ( strIndex < strLen )
-    {
-      String devStr;
-      int idx = listStr.indexOf( ',', strIndex );
-      if ( idx < 0 )
-      {
-        // maybe the once or last chargroup
-        devStr = listStr.substring( strIndex );
-      }
-      if ( idx > 0 )
-      {
-        // comma found at index idx
-        // extract found
-        devStr = listStr.substring( strIndex, idx );
-      }
-      // trim string (spaces remove)
-      devStr.trim();
-      elog.log( DEBUG, "%s: found device id: <%s>...", AlertConfObj::tag, devStr.c_str() );
-      deviceList.push_back( devStr );
-      strIndex += idx + 1;
-      // if these the once or last pair of chars
-      if ( idx < 0 )
-        break;
-    }
-    return deviceList;
-  }
 }  // namespace alertclock

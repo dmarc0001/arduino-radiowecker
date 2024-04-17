@@ -70,9 +70,6 @@ void setup()
   WifiConfig::init();
   elog.log( INFO, "%s: read startup config...", tag );
   AlertConfObj::readConfig();
-  //
-  // DEBUG: terstalert add
-  //
   elog.log( DEBUG, "%s: start alert task...", tag );
   AlertTask::start();
   elog.log( DEBUG, "%s: start device discover task...", tag );
@@ -88,11 +85,11 @@ void loop()
 
   // next time logger time sync
   static int64_t setNextTimeCorrect{ ( esp_timer_get_time() + getMicrosForSec( 21600 ) ) };
+  static int64_t setNextTimeWriteConfig{ ( esp_timer_get_time() + getMicrosForSec( 15 ) ) };
   static auto connected = WlanState::DISCONNECTED;
   //
   // for webserver
   //
-  // EnvServer::WifiConfig::wm.process();
   if ( setNextTimeCorrect < esp_timer_get_time() )
   {
     //
@@ -102,6 +99,22 @@ void loop()
     setNextTimeCorrect = esp_timer_get_time() + getMicrosForSec( 21600 );
     setLoggerTime();
     yield();
+  }
+  //
+  // for config saving
+  //
+  if( setNextTimeWriteConfig < esp_timer_get_time() )
+  {
+    //
+    // check if the config was changed
+    //
+    if( StatusObject::getWasConfigChanged() )
+    {
+      StatusObject::setWasConfigChanged(false);
+      yield();
+      AlertConfObj::saveConfig();
+      yield();
+    }
   }
   //
   // check if the state changed
@@ -179,7 +192,7 @@ void addTestAlert()
   //
   // create testalert
   //
-  AlertEntryPtr alert = std::make_shared< AlertEntry >("alert_98");
+  AlertEntryPtr alert = std::make_shared< AlertEntry >( "alert_98" );
   alert->volume = 21;                                         //! volume to weak up
   alert->location = "";                                       //! have to read in manual api
   alert->source = "PRESET_1";                                 //! preset or string to source
@@ -219,7 +232,7 @@ void addTestAlert()
   //
   // create testalert
   //
-  alert = std::make_shared< AlertEntry >("alert_99");
+  alert = std::make_shared< AlertEntry >( "alert_99" );
   alert->volume = 23;                                         //! volume to weak up
   alert->location = "";                                       //! have to read in manual api
   alert->source = "PRESET_4";                                 //! preset or string to source
@@ -258,4 +271,3 @@ void setLoggerTime()
     Elog::provideTime( ti.tm_year + 1900, ti.tm_mon + 1, ti.tm_mday, ti.tm_hour, ti.tm_min, ti.tm_sec );
   }
 }
-

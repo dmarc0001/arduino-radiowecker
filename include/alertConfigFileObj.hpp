@@ -20,15 +20,13 @@ namespace alertclock
     static const char *tag;
 
     public:
-    static bool readConfig();                        //! read whole config from flash
-    static bool readAlertConfig( const String & );   //! read config from json file
-    static bool saveAlertConfig( const String & );   //! write config to json file
-    static bool readDeviceConfig( const String & );  // read device config to json file
+    static bool readConfig();  //! read whole config from flash
+    static bool saveConfig();  //! write config to file
 
     private:
+    static bool readAlertConfig( const String & );                                //! read config from json file
+    static bool readDeviceConfig( const String & );                               // read device config to json file
     static cJSON *readAndParseFile( const String & );                             //! read and parse an json file
     static String getValueFromJsonObj( const char *name, const cJSON *jObject );  //! extract an value
-    static AlertDayList getAlertDaysList( const String & );                       //! convert to alert days
-    static AlertDeviceIdList getDevicesListForAlert( const String & );            //! List of device-ID's for an alert
   };
 }  // namespace alertclock

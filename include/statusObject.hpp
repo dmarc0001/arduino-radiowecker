@@ -16,6 +16,7 @@ namespace alertclock
     static bool is_init;                    //! was object initialized
     static bool is_running;                 //! is save Task running?
     static bool is_spiffs;                  //! is fikesystem okay?
+    static bool was_config_changed;         //! was config changed from user?
     static volatile WlanState wlanState;    //! is wlan disconnected, connected etc....
     static volatile AlertState alertState;  //! alert stati
     static volatile bool http_active;       //! was an acces via http?
@@ -37,6 +38,15 @@ namespace alertclock
     {
       return ( StatusObject::is_spiffs );
     }
+    static bool getWasConfigChanged()
+    {
+      return StatusObject::was_config_changed;
+    }
+    static void setWasConfigChanged( bool _set )
+    {
+      StatusObject::was_config_changed = _set;
+    }
+    static AlertEntryPtr getAlertWithName( const String & );  // get an alert pointer for name
 
     private:
   };

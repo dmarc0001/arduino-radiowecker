@@ -5,6 +5,7 @@
 #include "statics.hpp"
 #include "appPreferences.hpp"
 #include "statusObject.hpp"
+#include "alertConvert.hpp"
 #include "version.hpp"
 
 namespace webserver
@@ -124,19 +125,90 @@ namespace webserver
   {
     StatusObject::setHttpActive( true );
     String verb = request->pathArg( 0 );
-    String server, port;
+    // String server, port;
 
     elog.log( logger::DEBUG, "%s: api version 1 call set-%s", AlWebServer::tag, verb );
+    if ( verb.equals( "al-enable" ) )
+    {
+      if ( request->getParam( "alert" ) && request->getParam( "enable" ) )
+      {
+        String alertName = request->getParam( "alert" )->value();
+        bool enabled = request->getParam( "enable" )->value().equals( "true" ) ? true : false;
+        elog.log( logger::DEBUG, "%s: set-%s, param: %s to <%s>", AlWebServer::tag, alertName.c_str(), verb.c_str(),
+                  enabled ? "true" : "false" );
+        //
+        // searching the right alert
+        //
+        auto alertPtr = StatusObject::getAlertWithName( alertName );
+        if ( alertPtr )
+        {
+          if ( alertPtr->enable != enabled )
+          {
+            alertPtr->enable = enabled;
+            StatusObject::setWasConfigChanged( true );
+          }
+          request->send( 200, "text/plain",
+                         "OK api call v1 for <set-" + verb + "> -  alert <" + alertName + "> set to <" + enabled + ">." );
+          return;
+        }
+        elog.log( logger::ERROR, "%s: set-%s, requested alert not found!", AlWebServer::tag, verb.c_str() );
+        request->send( 300, "text/plain", "api call v1 for <set-" + verb + "> requested alert not found!" );
+        return;
+      }
+      else
+      {
+        elog.log( logger::ERROR, "%s: set-%s, without params!", AlWebServer::tag, verb.c_str() );
+        request->send( 300, "text/plain", "api call v1 for <set-" + verb + "> param not found!" );
+        return;
+      }
+    }
+    //
+    // raise volume for this alert?
+    //
+    else if ( verb.equals( "al-raise" ) )
+    {
+      if ( request->getParam( "alert" ) && request->getParam( "enable" ) )
+      {
+        String alertName = request->getParam( "alert" )->value();
+        bool enabled = request->getParam( "enable" )->value().equals( "true" ) ? true : false;
+        elog.log( logger::DEBUG, "%s: set-%s, param: %s to <%s>", AlWebServer::tag, verb.c_str(), alertName.c_str(),
+                  enabled ? "true" : "false" );
+        //
+        // searching the right alert
+        //
+        auto alertPtr = StatusObject::getAlertWithName( alertName );
+        if ( alertPtr )
+        {
+          if ( alertPtr->raiseVol != enabled )
+          {
+            alertPtr->raiseVol = enabled;
+            StatusObject::setWasConfigChanged( true );
+          }
+          request->send( 200, "text/plain",
+                         "OK api call v1 for <set-" + verb + "> -  alert <" + alertName + "> set to <" + enabled + ">." );
+          return;
+        }
+        elog.log( logger::ERROR, "%s: set-%s, requested alert not found!", AlWebServer::tag, verb.c_str() );
+        request->send( 300, "text/plain", "api call v1 for <set-" + verb + "> requested alert not found!" );
+        return;
+      }
+      else
+      {
+        elog.log( logger::ERROR, "%s: set-%s, without params!", AlWebServer::tag, verb.c_str() );
+        request->send( 300, "text/plain", "api call v1 for <set-" + verb + "> param not found!" );
+        return;
+      }
+    }
     //
     // timezone set?
     //
-    if ( verb.equals( "timezone" ) )
+    else if ( verb.equals( "timezone" ) )
     {
       // timezone parameter find
       if ( request->hasParam( "timezone" ) )
       {
         String timezone = request->getParam( "timezone" )->value();
-        elog.log( logger::DEBUG, "%s: set-timezone, param: %s", AlWebServer::tag, timezone.c_str() );
+        elog.log( logger::DEBUG, "%s: set-%s, param: %s", AlWebServer::tag, verb.c_str(), timezone.c_str() );
         // appprefs::LocalPrefs::setTimeZone( timezone );
         request->send( 200, "text/plain",
                        "OK api call v1 for <set-" + verb + "> -  not implemented (BUG:) while lib error in esp32-s2" );
@@ -149,7 +221,7 @@ namespace webserver
       }
       else
       {
-        elog.log( logger::ERROR, "%s: set-timezone, param not found!", AlWebServer::tag );
+        elog.log( logger::ERROR, "%s: set-%s, param not found!", AlWebServer::tag, verb.c_str() );
         request->send( 300, "text/plain", "api call v1 for <set-" + verb + "> param not found!" );
         return;
       }
@@ -160,10 +232,8 @@ namespace webserver
       if ( request->hasParam( "timezone" ) )
       {
         String timezone = request->getParam( "timezone-offset" )->value();
-        elog.log( logger::DEBUG, "%s: set-timezone-offset, param: %s", AlWebServer::tag, timezone.c_str() );
+        elog.log( logger::DEBUG, "%s: set-%s, param: %s", AlWebServer::tag, verb.c_str(), timezone.c_str() );
         appprefs::LocalPrefs::setTimezoneOffset( timezone.toInt() );
-
-        // appprefs::LocalPrefs::setTimeZone( timezone );
         request->send( 200, "text/plain", "OK api call v1 for <set-" + verb + ">" );
         // setenv( "TZ", timezone.c_str(), 1 );
         // tzset();
@@ -174,7 +244,7 @@ namespace webserver
       }
       else
       {
-        elog.log( logger::ERROR, "%s: set-timezone, param not found!", AlWebServer::tag );
+        elog.log( logger::ERROR, "%s: set-%s, param not found!", AlWebServer::tag, verb.c_str() );
         request->send( 300, "text/plain", "api call v1 for <set-" + verb + "> param not found!" );
         return;
       }
@@ -185,7 +255,7 @@ namespace webserver
       if ( request->hasParam( "level" ) )
       {
         String level = request->getParam( "level" )->value();
-        elog.log( logger::DEBUG, "%s: set-loglevel, param: %s", AlWebServer::tag, level.c_str() );
+        elog.log( logger::DEBUG, "%s: set-%s, param: %s", AlWebServer::tag, verb.c_str(), level.c_str() );
         uint8_t numLevel = static_cast< uint8_t >( level.toInt() );
         appprefs::LocalPrefs::setLogLevel( numLevel );
         request->send( 200, "text/plain", "OK api call v1 for <set-" + verb + ">" );
@@ -196,52 +266,45 @@ namespace webserver
       }
       else
       {
-        elog.log( logger::ERROR, "%s: set-loglevel, param not found!", AlWebServer::tag );
+        elog.log( logger::ERROR, "%s: set-%s, param not found!", AlWebServer::tag, verb.c_str() );
         request->send( 300, "text/plain", "api call v1 for <set-" + verb + "> param not found!" );
         return;
       }
     }
-    //
-    // server/port set?
-    //
-    if ( request->hasParam( "server" ) )
-      server = request->getParam( "server" )->value();
-    if ( request->hasParam( "port" ) )
-      port = request->getParam( "port" )->value();
-    //
-    if ( server.isEmpty() || port.isEmpty() )
+    else if ( verb.equals( "syslog" ) )
     {
       //
-      // not set, i can't compute this
+      // server/port set?
       //
-      request->send( 300, "text/plain", "fail api call v1 for <set-" + verb + "> - no server/port params" );
-      return;
-    }
-    //
-    // params to usable objects
-    //
-    IPAddress srv;
-    srv.fromString( server );
-    uint16_t srvport = static_cast< uint16_t >( port.toInt() );
-    //
-    // which command?
-    //
-    if ( verb.equals( "syslog" ) )
-    {
-      elog.log( logger::DEBUG, "%s: set-syslog, params: %s, %s", AlWebServer::tag, server.c_str(), port.c_str() );
-      appprefs::LocalPrefs::setSyslogServer( srv );
-      appprefs::LocalPrefs::setSyslogPort( srvport );
-      // reboot then
+      if ( request->getParam( "server" ) && request->getParam( "port" ) )
+      {
+        String server = request->getParam( "server" )->value();
+        String port = request->getParam( "port" )->value();
+        //
+        // params to usable objects
+        //
+        IPAddress srv;
+        srv.fromString( server );
+        uint16_t srvport = static_cast< uint16_t >( port.toInt() );
+        elog.log( logger::DEBUG, "%s: set-syslog, params: %s, %s", AlWebServer::tag, server.c_str(), port.c_str() );
+        appprefs::LocalPrefs::setSyslogServer( srv );
+        appprefs::LocalPrefs::setSyslogPort( srvport );
+        request->send( 200, "text/plain", "OK api call v1 for <set-" + verb + "> RESTART CONTROLLER" );
+        yield();
+        sleep( 2 );
+        ESP.restart();
+      }
+      else
+      {
+        request->send( 300, "text/plain", "fail api call v1 for <set-" + verb + "> - no server/port params" );
+        return;
+      }
     }
     else
     {
-      request->send( 300, "text/plain", "fail api call v1 for <set-" + verb + ">" );
+      request->send( 300, "text/plain", "unknown api call v1 for <set-" + verb + ">" );
       return;
     }
-    request->send( 200, "text/plain", "OK api call v1 for <set-" + verb + "> RESTART CONTROLLER" );
-    yield();
-    sleep( 2 );
-    ESP.restart();
   }
 
   /**
@@ -317,11 +380,11 @@ namespace webserver
         cJSON_AddStringToObject( devObj, "month", String( ( *alert )->month ).c_str() );
       // days enum-vector to string
       String listJoinString;
-      AlWebServer::makeDaysString( ( *alert )->days, listJoinString );
+      AlertConvert::makeDaysString( ( *alert )->days, listJoinString );
       cJSON_AddStringToObject( devObj, "days", listJoinString.c_str() );
       listJoinString.clear();
       // devices string-vector to String
-      AlWebServer::makeDevicesString( ( *alert )->devices, listJoinString );
+      AlertConvert::makeDevicesString( ( *alert )->devices, listJoinString );
       cJSON_AddStringToObject( devObj, "devices", listJoinString.c_str() );
       // make timestamp to ascci
       char buf[ 32 ];
@@ -357,55 +420,53 @@ namespace webserver
       //
       // search for alert name
       //
-      for ( auto alert = StatusObject::alertList.begin(); alert != StatusObject::alertList.end(); alert++ )
+      auto alertPtr = StatusObject::getAlertWithName( alertName );
+      if ( alertPtr )
       {
-        if ( ( *alert )->name.equals( alertName ) )
-        {
-          //
-          // i want to receive this alert
-          //
-          cJSON *root = cJSON_CreateObject();
-          //
-          cJSON_AddStringToObject( root, "note", ( *alert )->note.c_str() );
-          cJSON_AddStringToObject( root, "name", ( *alert )->name.c_str() );
-          cJSON_AddBoolToObject( root, "enable", ( *alert )->enable );
-          cJSON_AddBoolToObject( root, "deleted", false );
-          cJSON_AddStringToObject( root, "volume", String( ( *alert )->volume ).c_str() );
-          cJSON_AddBoolToObject( root, "raise", ( *alert )->raiseVol );
-          cJSON_AddStringToObject( root, "location", "" );
-          cJSON_AddStringToObject( root, "source", ( *alert )->source.c_str() );
-          cJSON_AddStringToObject( root, "duration", String( ( *alert )->duration ).c_str() );
-          cJSON_AddStringToObject( root, "sourceAccount", "" );
-          cJSON_AddStringToObject( root, "type", "" );
-          cJSON_AddStringToObject( root, "alertHour", String( ( *alert )->alertHour ).c_str() );
-          cJSON_AddStringToObject( root, "alertMinute", String( ( *alert )->alertMinute ).c_str() );
-          if ( ( *alert )->day == 255 )
-            cJSON_AddStringToObject( root, "day", "" );
-          else
-            cJSON_AddStringToObject( root, "day", String( ( *alert )->day ).c_str() );
-          if ( ( *alert )->month == 255 )
-            cJSON_AddStringToObject( root, "month", "" );
-          else
-            cJSON_AddStringToObject( root, "month", String( ( *alert )->month ).c_str() );
-          // days enum-vector to string
-          String listJoinString;
-          AlWebServer::makeDaysString( ( *alert )->days, listJoinString );
-          cJSON_AddStringToObject( root, "days", listJoinString.c_str() );
-          listJoinString.clear();
-          // devices string-vector to String
-          AlWebServer::makeDevicesString( ( *alert )->devices, listJoinString );
-          cJSON_AddStringToObject( root, "devices", listJoinString.c_str() );
-          // make timestamp to ascci
-          char buf[ 32 ];
-          ltoa( ( *alert )->lastWriten, buf, 10 );
-          cJSON_AddStringToObject( root, "lastWritten", buf );
-          const char *alert = cJSON_Print( root );
-          String alertsStr( alert );
-          request->send( 200, "application/json", alertsStr );
-          free( ( void * ) alert );
-          cJSON_Delete( root );
-          return;
-        }
+        //
+        // i want to receive this alert
+        //
+        cJSON *root = cJSON_CreateObject();
+        //
+        cJSON_AddStringToObject( root, "note", alertPtr->note.c_str() );
+        cJSON_AddStringToObject( root, "name", alertPtr->name.c_str() );
+        cJSON_AddBoolToObject( root, "enable", alertPtr->enable );
+        cJSON_AddBoolToObject( root, "deleted", false );
+        cJSON_AddStringToObject( root, "volume", String( alertPtr->volume ).c_str() );
+        cJSON_AddBoolToObject( root, "raise", alertPtr->raiseVol );
+        cJSON_AddStringToObject( root, "location", "" );
+        cJSON_AddStringToObject( root, "source", alertPtr->source.c_str() );
+        cJSON_AddStringToObject( root, "duration", String( alertPtr->duration ).c_str() );
+        cJSON_AddStringToObject( root, "sourceAccount", "" );
+        cJSON_AddStringToObject( root, "type", "" );
+        cJSON_AddStringToObject( root, "alertHour", String( alertPtr->alertHour ).c_str() );
+        cJSON_AddStringToObject( root, "alertMinute", String( alertPtr->alertMinute ).c_str() );
+        if ( alertPtr->day == 255 )
+          cJSON_AddStringToObject( root, "day", "" );
+        else
+          cJSON_AddStringToObject( root, "day", String( alertPtr->day ).c_str() );
+        if ( alertPtr->month == 255 )
+          cJSON_AddStringToObject( root, "month", "" );
+        else
+          cJSON_AddStringToObject( root, "month", String( alertPtr->month ).c_str() );
+        // days enum-vector to string
+        String listJoinString;
+        AlertConvert::makeDaysString( alertPtr->days, listJoinString );
+        cJSON_AddStringToObject( root, "days", listJoinString.c_str() );
+        listJoinString.clear();
+        // devices string-vector to String
+        AlertConvert::makeDevicesString( alertPtr->devices, listJoinString );
+        cJSON_AddStringToObject( root, "devices", listJoinString.c_str() );
+        // make timestamp to ascci
+        char buf[ 32 ];
+        ltoa( alertPtr->lastWriten, buf, 10 );
+        cJSON_AddStringToObject( root, "lastWritten", buf );
+        const char *alert = cJSON_Print( root );
+        String alertsStr( alert );
+        request->send( 200, "application/json", alertsStr );
+        free( ( void * ) alert );
+        cJSON_Delete( root );
+        return;
       }
       request->send( 500, "text/plain", "requested alert not found" );
     }
@@ -431,7 +492,7 @@ namespace webserver
       //
       cJSON *devObj = cJSON_CreateObject();
       //
-      // vrearte items in device object
+      // create items in device object
       //
       cJSON_AddStringToObject( devObj, "name", ( *device )->name.c_str() );
       cJSON_AddStringToObject( devObj, "id", ( *device )->id.c_str() );
@@ -590,58 +651,6 @@ namespace webserver
     //
     contentType = "text/plain";
     return type;
-  }
-
-  /**
-   * make a string from devices list of strings
-   */
-  void AlWebServer::makeDevicesString( AlertDeviceIdList &list, String &retString )
-  {
-    for ( auto dev = list.begin(); dev != list.end(); dev++ )
-    {
-      if ( retString.isEmpty() )
-        retString = *dev;
-      else
-        retString += "," + *dev;
-    }
-  }
-
-  /**
-   * make a string of weekdays, if there
-   */
-  void AlWebServer::makeDaysString( AlertDayList &list, String &retString )
-  {
-    for ( auto day = list.begin(); day != list.end(); day++ )
-    {
-      String loc_day;
-      switch ( *day )
-      {
-        case AlertDays::mo:
-          loc_day = "mo";
-          break;
-        case AlertDays::tu:
-          loc_day = "tu";
-          break;
-        case AlertDays::we:
-          loc_day = "we";
-          break;
-        case AlertDays::th:
-          loc_day = "th";
-          break;
-        case AlertDays::fr:
-          loc_day = "fr";
-          break;
-        case AlertDays::sa:
-          loc_day = "sa";
-          break;
-        case AlertDays::su:
-          loc_day = "su";
-          break;
-      }
-      if ( !retString.isEmpty() )
-        retString += ",";
-      retString += loc_day;
-    }
   }
 
 }  // namespace webserver

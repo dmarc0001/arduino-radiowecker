@@ -14,6 +14,7 @@ namespace alertclock
   bool StatusObject::is_init{ false };
   bool StatusObject::is_running{ false };
   bool StatusObject::is_spiffs{ false };
+  bool StatusObject::was_config_changed{ false };
   volatile WlanState StatusObject::wlanState{ WlanState::DISCONNECTED };
   volatile AlertState StatusObject::alertState{ AlertState::ALERT_NONE };
   volatile bool StatusObject::http_active{ false };
@@ -143,6 +144,22 @@ namespace alertclock
   bool StatusObject::getHttpActive()
   {
     return StatusObject::http_active;
+  }
+
+
+/**
+   * return a shared pinter to alert
+   */
+  AlertEntryPtr StatusObject::getAlertWithName( const String &alertName )
+  {
+    for ( auto alertIter = StatusObject::alertList.begin(); alertIter != StatusObject::alertList.end(); alertIter++ )
+    {
+      if ( ( *alertIter )->name.equals( alertName ) )
+      {
+        return *alertIter;
+      }
+    }
+    return nullptr;
   }
 
 }  // namespace alertclock

@@ -28,8 +28,8 @@ namespace alertclock
     WifiConfig::wm.setConnectTimeout( 20 );
     //
     // esp32 time config
-    // BUG: timezone not work, usinf gmt offset
-    configTime( appprefs::LocalPrefs::getTimezoneOffset(), 0, "pool.ntp.org", "de.pool.ntp.org" );
+    // BUG: timezone not work, using gmt offset
+    configTime( appprefs::LocalPrefs::getTimezoneOffset(), 0, appprefs::NTP_POOL_01, appprefs::NTP_POOL_02 );
     // the old way...
     // sntp_set_sync_mode( SNTP_SYNC_MODE_IMMED );
     // sntp_setoperatingmode( SNTP_OPMODE_POLL );

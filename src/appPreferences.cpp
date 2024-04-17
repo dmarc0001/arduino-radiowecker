@@ -90,6 +90,7 @@ namespace appprefs
    */
   bool LocalPrefs::setTimezoneOffset( long _offset )
   {
+    configTime( _offset, 0, NTP_POOL_01, NTP_POOL_02 );
     return ( LocalPrefs::lPref.putLong( LOCAL_TIMEZONE_OFFSET, _offset ) );
   }
 

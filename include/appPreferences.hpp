@@ -22,6 +22,8 @@ namespace appprefs
   // some values are depend from compiling mode...
   //
   constexpr long BUGFIX_TIMEZONE_OFFSET = 3600L;               //! bug in esp32-s2 lib (timezone not working, und normal esp32 works)
+  constexpr const char *NTP_POOL_01{ "pool.ntp.org" };         //! ntp pool
+  constexpr const char *NTP_POOL_02{ "de.pool.ntp.org" };      //! ntp pool
   constexpr gpio_num_t RANDOM_INIT_PORT = GPIO_NUM_0;          //! port for init random
   constexpr const char *DEFAULT_HOSTNAME{ "alert" };           //! default hostname
   constexpr const char *APPNAME{ "alert-app" };                //! app name
