@@ -14,7 +14,7 @@ namespace alertclock
   bool StatusObject::is_init{ false };
   bool StatusObject::is_running{ false };
   bool StatusObject::is_spiffs{ false };
-  bool StatusObject::was_config_changed{ false };
+  int64_t StatusObject::setNextTimeWriteConfig{ 0LL };
   volatile WlanState StatusObject::wlanState{ WlanState::DISCONNECTED };
   volatile AlertState StatusObject::alertState{ AlertState::ALERT_NONE };
   volatile bool StatusObject::http_active{ false };
@@ -146,8 +146,7 @@ namespace alertclock
     return StatusObject::http_active;
   }
 
-
-/**
+  /**
    * return a shared pinter to alert
    */
   AlertEntryPtr StatusObject::getAlertWithName( const String &alertName )
@@ -160,6 +159,18 @@ namespace alertclock
       }
     }
     return nullptr;
+  }
+
+  void StatusObject::setWasConfigChanged( bool _set )
+  {
+    if ( _set )
+    {
+      StatusObject::setNextTimeWriteConfig = esp_timer_get_time() + getMicrosForSec( 10 );
+    }
+    else
+    {
+      StatusObject::setNextTimeWriteConfig = 0LL;
+    }
   }
 
 }  // namespace alertclock

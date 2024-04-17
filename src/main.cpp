@@ -85,7 +85,6 @@ void loop()
 
   // next time logger time sync
   static int64_t setNextTimeCorrect{ ( esp_timer_get_time() + getMicrosForSec( 21600 ) ) };
-  static int64_t setNextTimeWriteConfig{ ( esp_timer_get_time() + getMicrosForSec( 15 ) ) };
   static auto connected = WlanState::DISCONNECTED;
   //
   // for webserver
@@ -103,18 +102,20 @@ void loop()
   //
   // for config saving
   //
-  if ( setNextTimeWriteConfig < esp_timer_get_time() )
+  if ( StatusObject::getWasConfigChanged() )
   {
-    //
-    // check if the config was changed
-    //
-    if ( StatusObject::getWasConfigChanged() )
+    if ( StatusObject::getWasConfigChanged() < esp_timer_get_time() )
     {
-      StatusObject::setWasConfigChanged( false );
-      setNextTimeWriteConfig = esp_timer_get_time() + getMicrosForSec( 10 );
-      yield();
-      AlertConfObj::saveConfig();
-      yield();
+      //
+      // check if the config was changed
+      //
+      if ( StatusObject::getWasConfigChanged() )
+      {
+        StatusObject::setWasConfigChanged( false );
+        yield();
+        AlertConfObj::saveConfig();
+        yield();
+      }
     }
   }
   //

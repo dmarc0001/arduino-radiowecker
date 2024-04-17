@@ -92,6 +92,7 @@ namespace alertclock
       free( ( void * ) alerts );
       cJSON_Delete( root );
       xSemaphoreGive( StatusObject::configFileSem );
+      elog.log( INFO, "%s: save alert config...OK", AlertConfObj::tag );
       return isOkay;
     }
     elog.log( ERROR, "%s: save alert config tailed, can't obtain semaphore...", AlertConfObj::tag );
