@@ -16,8 +16,7 @@
   - /api/v1/alert?alert=alert_XX : get one alert
   - /api/vi/set-al-enable?alert=alert_XX&enable=true|false
   - /api/vi/set-al-raise?alert=alert_XX&enable=true|false
-
-
+  - /api/vi/set-al-delete?alert=alert_XX
   
   - not func, bug in lib esp32-s2
   - /api/v1/set-timezone?timezone=CET-1 : set internal timezone (for GUI)

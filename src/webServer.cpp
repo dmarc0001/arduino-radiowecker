@@ -42,7 +42,7 @@ namespace webserver
     //
     AlWebServer::server.on( "/", HTTP_GET, AlWebServer::onIndex );
     AlWebServer::server.on( "/index\\.html", HTTP_GET, AlWebServer::onIndex );
-    AlWebServer::server.on( "^\\/api\\/v1\\/set-(.*)\?(.*)$", HTTP_GET, AlWebServer::onApiV1Set );
+    AlWebServer::server.on( "^\\/api\\/v1\\/set-(.*)\?(.*)$", HTTP_GET | HTTP_POST, AlWebServer::onApiV1Set );
     AlWebServer::server.on( "^\\/api\\/v1\\/(.*)$", HTTP_GET, AlWebServer::onApiV1 );
     AlWebServer::server.on( "^\\/.*$", HTTP_GET, AlWebServer::onFilesReq );
     AlWebServer::server.onNotFound( AlWebServer::onNotFound );
@@ -125,16 +125,17 @@ namespace webserver
   {
     StatusObject::setHttpActive( true );
     String verb = request->pathArg( 0 );
+
     // String server, port;
 
     elog.log( logger::DEBUG, "%s: api version 1 call set-%s", AlWebServer::tag, verb );
     if ( verb.equals( "al-enable" ) )
     {
-      if ( request->getParam( "alert" ) && request->getParam( "enable" ) )
+      if ( request->getParam( "alert" ) && request->getParam( "enable" ) && request->method() == HTTP_GET )
       {
         String alertName = request->getParam( "alert" )->value();
         bool enabled = request->getParam( "enable" )->value().equals( "true" ) ? true : false;
-        elog.log( logger::DEBUG, "%s: set-%s, param: %s to <%s>", AlWebServer::tag, alertName.c_str(), verb.c_str(),
+        elog.log( logger::DEBUG, "%s: set-%s, param: %s to <%s>", AlWebServer::tag, verb.c_str(), alertName.c_str(),
                   enabled ? "true" : "false" );
         //
         // searching the right alert
@@ -167,7 +168,7 @@ namespace webserver
     //
     else if ( verb.equals( "al-raise" ) )
     {
-      if ( request->getParam( "alert" ) && request->getParam( "enable" ) )
+      if ( request->getParam( "alert" ) && request->getParam( "enable" ) && request->method() == HTTP_GET )
       {
         String alertName = request->getParam( "alert" )->value();
         bool enabled = request->getParam( "enable" )->value().equals( "true" ) ? true : false;
@@ -200,12 +201,44 @@ namespace webserver
       }
     }
     //
+    // alert delete
+    //
+    else if ( verb.equals( "al-delete" ) )
+    {
+      if ( request->hasParam( "alert" ) && request->method() == HTTP_GET )
+      {
+        String alertName = request->getParam( "alert" )->value();
+        //
+        // searching the right alert
+        //
+        for ( auto alertIter = StatusObject::alertList.begin(); alertIter != StatusObject::alertList.end(); alertIter++ )
+        {
+          if ( ( *alertIter )->name.equals( alertName ) )
+          {
+            StatusObject::alertList.erase( alertIter );
+            StatusObject::setWasConfigChanged( true );
+            request->send( 200, "text/plain", "OK api call v1 for <set-" + verb + "> -  alert <" + alertName + ">." );
+            return;
+          }
+        }
+        elog.log( logger::ERROR, "%s: set-%s, requested alert not found!", AlWebServer::tag, verb.c_str() );
+        request->send( 300, "text/plain", "OK api call v1 for <set-" + verb + "> -  alert <" + alertName + "> not found." );
+        return;
+      }
+      else
+      {
+        elog.log( logger::ERROR, "%s: set-%s, without params!", AlWebServer::tag, verb.c_str() );
+        request->send( 300, "text/plain", "api call v1 for <set-" + verb + "> param not found!" );
+        return;
+      }
+    }
+    //
     // timezone set?
     //
     else if ( verb.equals( "timezone" ) )
     {
       // timezone parameter find
-      if ( request->hasParam( "timezone" ) )
+      if ( request->hasParam( "timezone" ) && request->method() == HTTP_GET )
       {
         String timezone = request->getParam( "timezone" )->value();
         elog.log( logger::DEBUG, "%s: set-%s, param: %s", AlWebServer::tag, verb.c_str(), timezone.c_str() );
@@ -220,7 +253,7 @@ namespace webserver
         return;
       }
       // timezone offset parameter find
-      else if ( request->hasParam( "timezone-offset" ) )
+      else if ( request->hasParam( "timezone-offset" ) && request->method() == HTTP_GET )
       {
         String timezone = request->getParam( "timezone-offset" )->value();
         elog.log( logger::DEBUG, "%s: set-%s, param: %s", AlWebServer::tag, verb.c_str(), timezone.c_str() );
@@ -243,7 +276,7 @@ namespace webserver
     else if ( verb.equals( "loglevel" ) )
     {
       // loglevel parameter find
-      if ( request->hasParam( "level" ) )
+      if ( request->hasParam( "level" ) && request->method() == HTTP_GET )
       {
         String level = request->getParam( "level" )->value();
         elog.log( logger::DEBUG, "%s: set-%s, param: %s", AlWebServer::tag, verb.c_str(), level.c_str() );
@@ -267,7 +300,7 @@ namespace webserver
       //
       // server/port set?
       //
-      if ( request->getParam( "server" ) && request->getParam( "port" ) )
+      if ( request->getParam( "server" ) && request->getParam( "port" ) && request->method() == HTTP_GET )
       {
         String server = request->getParam( "server" )->value();
         String port = request->getParam( "port" )->value();
@@ -293,7 +326,8 @@ namespace webserver
     }
     else
     {
-      request->send( 300, "text/plain", "unknown api call v1 for <set-" + verb + ">" );
+      String meth( request->method() == HTTP_POST ? "POST" : "GET" );
+      request->send( 300, "text/plain", "unknown api call v1 for <set-" + verb + "> method: " + meth );
       return;
     }
   }
