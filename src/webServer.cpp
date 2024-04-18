@@ -219,17 +219,8 @@ namespace webserver
         // ESP.restart();
         return;
       }
-      else
-      {
-        elog.log( logger::ERROR, "%s: set-%s, param not found!", AlWebServer::tag, verb.c_str() );
-        request->send( 300, "text/plain", "api call v1 for <set-" + verb + "> param not found!" );
-        return;
-      }
-    }
-    if ( verb.equals( "time-offset" ) )
-    {
-      // timezone parameter find
-      if ( request->hasParam( "timezone" ) )
+      // timezone offset parameter find
+      else if ( request->hasParam( "timezone-offset" ) )
       {
         String timezone = request->getParam( "timezone-offset" )->value();
         elog.log( logger::DEBUG, "%s: set-%s, param: %s", AlWebServer::tag, verb.c_str(), timezone.c_str() );
