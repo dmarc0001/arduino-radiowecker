@@ -10,6 +10,9 @@ namespace alertclock
   // AlertConfObj
   const char *AlertConfObj::tag{ "alertconfig" };
 
+  /**
+   * read configs from file
+   */
   bool AlertConfObj::readConfig()
   {
     if ( AlertConfObj::readDeviceConfig( appprefs::LocalPrefs::devicesConfigfile ) )
@@ -18,84 +21,125 @@ namespace alertclock
     return false;
   }
 
+  /**
+   * write current alert config to file
+   */
   bool AlertConfObj::saveConfig()
   {
     bool isOkay{ true };
 
     elog.log( INFO, "%s: save alert config...", AlertConfObj::tag );
-    if ( xSemaphoreTake( StatusObject::configFileSem, pdMS_TO_TICKS( 6000 ) ) == pdTRUE )
+    //
+    // save data
+    // first create an json Array for alerts
+    //
+    cJSON *root = cJSON_CreateArray();
+    for ( auto alertIt = StatusObject::alertList.begin(); alertIt != StatusObject::alertList.end(); alertIt++ )
     {
       //
-      // save data
-      // first create an json Array for alerts
+      // create json Object for root Array and every alert
       //
-      cJSON *root = cJSON_CreateArray();
-      for ( auto alertIt = StatusObject::alertList.begin(); alertIt != StatusObject::alertList.end(); alertIt++ )
-      {
-        //
-        // create json Object for root Array and every alert
-        //
-        cJSON *devObj = cJSON_CreateObject();
-        //
-        cJSON_AddStringToObject( devObj, "note", ( *alertIt )->note.c_str() );
-        cJSON_AddStringToObject( devObj, "name", ( *alertIt )->name.c_str() );
-        cJSON_AddBoolToObject( devObj, "enable", ( *alertIt )->enable );
-        cJSON_AddStringToObject( devObj, "volume", String( ( *alertIt )->volume ).c_str() );
-        cJSON_AddBoolToObject( devObj, "raise", ( *alertIt )->raiseVol );
-        cJSON_AddStringToObject( devObj, "location", "" );
-        cJSON_AddStringToObject( devObj, "source", ( *alertIt )->source.c_str() );
-        cJSON_AddStringToObject( devObj, "duration", String( ( *alertIt )->duration ).c_str() );
-        cJSON_AddStringToObject( devObj, "sourceAccount", "" );
-        cJSON_AddStringToObject( devObj, "type", "" );
-        cJSON_AddStringToObject( devObj, "alertHour", String( ( *alertIt )->alertHour ).c_str() );
-        cJSON_AddStringToObject( devObj, "alertMinute", String( ( *alertIt )->alertMinute ).c_str() );
-        if ( ( *alertIt )->day == 255 )
-          cJSON_AddStringToObject( devObj, "day", "" );
-        else
-          cJSON_AddStringToObject( devObj, "day", String( ( *alertIt )->day ).c_str() );
-        if ( ( *alertIt )->month == 255 )
-          cJSON_AddStringToObject( devObj, "month", "" );
-        else
-          cJSON_AddStringToObject( devObj, "month", String( ( *alertIt )->month ).c_str() );
-        // days enum-vector to string
-        String listJoinString;
-        AlertConvert::makeDaysString( ( *alertIt )->days, listJoinString );
-        cJSON_AddStringToObject( devObj, "days", listJoinString.c_str() );
-        listJoinString.clear();
-        // devices string-vector to String
-        AlertConvert::makeDevicesString( ( *alertIt )->devices, listJoinString );
-        cJSON_AddStringToObject( devObj, "devices", listJoinString.c_str() );
-      }
-      const char *alerts = cJSON_Print( root );
-      String alertsStr( alerts );
+      cJSON *devObj = cJSON_CreateObject();
       //
-      // TODO: write to file
+      cJSON_AddStringToObject( devObj, "note", ( *alertIt )->note.c_str() );
+      cJSON_AddStringToObject( devObj, "name", ( *alertIt )->name.c_str() );
+      cJSON_AddBoolToObject( devObj, "enable", ( *alertIt )->enable );
+      cJSON_AddStringToObject( devObj, "volume", String( ( *alertIt )->volume ).c_str() );
+      cJSON_AddBoolToObject( devObj, "raise", ( *alertIt )->raiseVol );
+      cJSON_AddStringToObject( devObj, "location", "" );
+      cJSON_AddStringToObject( devObj, "source", ( *alertIt )->source.c_str() );
+      cJSON_AddStringToObject( devObj, "duration", String( ( *alertIt )->duration ).c_str() );
+      cJSON_AddStringToObject( devObj, "account", "" );
+      cJSON_AddStringToObject( devObj, "type", "" );
+      cJSON_AddStringToObject( devObj, "hour", String( ( *alertIt )->alertHour ).c_str() );
+      cJSON_AddStringToObject( devObj, "minute", String( ( *alertIt )->alertMinute ).c_str() );
+      if ( ( *alertIt )->day == 255 )
+        cJSON_AddStringToObject( devObj, "dateday", "" );
+      else
+        cJSON_AddStringToObject( devObj, "dateday", String( ( *alertIt )->day ).c_str() );
+      if ( ( *alertIt )->month == 255 )
+        cJSON_AddStringToObject( devObj, "datemonth", "" );
+      else
+        cJSON_AddStringToObject( devObj, "datemonth", String( ( *alertIt )->month ).c_str() );
+      // days enum-vector to string
+      String listJoinString;
+      AlertConvert::makeDaysString( ( *alertIt )->days, listJoinString );
+      cJSON_AddStringToObject( devObj, "days", listJoinString.c_str() );
+      listJoinString.clear();
+      // devices string-vector to String
+      AlertConvert::makeDevicesString( ( *alertIt )->devices, listJoinString );
+      cJSON_AddStringToObject( devObj, "devices", listJoinString.c_str() );
       //
-      File fd;
-      elog.log( DEBUG, "%s: open %s...", AlertConfObj::tag, appprefs::LocalPrefs::alertConfigFile );
-      fd = SPIFFS.open( appprefs::LocalPrefs::alertConfigFile, "w", true );
-      if ( !fd )
-        isOkay = false;
+      // put it in the array
+      //
+      cJSON_AddItemToArray( root, devObj );
+    }
+    const char *alertsPtr = cJSON_Print( root );
+    const String alertsStr( alertsPtr );
+    //
+    // write to file
+    //
+    File fd;
+    const String fileName( appprefs::ALERT_CONFIG_BCKP );
+    elog.log( DEBUG, "%s: open %s...", AlertConfObj::tag, fileName.c_str() );
+    //
+    // write to backup file first
+    //
+    fd = SPIFFS.open( fileName, "w", true );
+    if ( !fd )
+    {
+      elog.log( ERROR, "%s: open %s...FAILED", AlertConfObj::tag, fileName.c_str() );
+      isOkay = false;
+    }
+    else
       // checkpoint
-      elog.log( DEBUG, "%s: open %s...OK", AlertConfObj::tag, appprefs::LocalPrefs::alertConfigFile );
-      if ( isOkay )
+      elog.log( DEBUG, "%s: open %s...OK", AlertConfObj::tag, fileName.c_str() );
+    if ( isOkay )
+    {
+      fd.print( alertsStr );
+      fd.flush();
+      fd.close();
+    }
+    else
+    {
+      elog.log( ERROR, "%s: save alert config failed, can't open file <%s>...", AlertConfObj::tag, fileName.c_str() );
+      isOkay = false;
+    }
+    free( (void *)( alertsPtr ) );
+    cJSON_Delete( root );
+    if ( isOkay )
+    {
+      if ( xSemaphoreTake( StatusObject::configFileSem, pdMS_TO_TICKS( 6000 ) ) == pdTRUE )
       {
-        fd.print( alertsStr );
-        fd.flush();
-        fd.close();
+        // fd = SPIFFS.open( appprefs::LocalPrefs::alertConfigFile, "w", true );
+        //
+        // rename backup to origin
+        //
+        elog.log( DEBUG, "%s: rename file <%s> to <%s>...", AlertConfObj::tag, fileName.c_str(),
+                  appprefs::LocalPrefs::alertConfigFile.c_str() );
+        if ( SPIFFS.exists( appprefs::LocalPrefs::alertConfigFile ) )
+        {
+          SPIFFS.remove( appprefs::LocalPrefs::alertConfigFile );
+        }
+        if ( SPIFFS.rename( fileName, appprefs::LocalPrefs::alertConfigFile ) )
+        {
+          elog.log( INFO, "%s: save alert config...OK", AlertConfObj::tag );
+        }
+        else
+        {
+          elog.log( ERROR, "%s: save alert config FAILED!", AlertConfObj::tag );
+          isOkay = false;
+        }
+        xSemaphoreGive( StatusObject::configFileSem );
+        return isOkay;
       }
       else
       {
-        elog.log( ERROR, "%s: save alert config tailed, can't open file <%s>...", AlertConfObj::tag,
-                  appprefs::LocalPrefs::alertConfigFile );
+        elog.log( ERROR, "%s: can't obtain semaphore for config...", AlertConfObj::tag );
+        isOkay = false;
       }
-      free( ( void * ) alerts );
-      cJSON_Delete( root );
-      xSemaphoreGive( StatusObject::configFileSem );
-      elog.log( INFO, "%s: save alert config...OK", AlertConfObj::tag );
-      return isOkay;
     }
-    elog.log( ERROR, "%s: save alert config tailed, can't obtain semaphore...", AlertConfObj::tag );
+    elog.log( ERROR, "%s: save alert config failed...", AlertConfObj::tag );
     return isOkay;
   }
 
@@ -115,6 +159,21 @@ namespace alertclock
     StatusObject::alertList.clear();
     elog.log( DEBUG, "%s: infos total: %d, used: %d free: %d ...", AlertConfObj::tag, total, used, total - used );
     delay( 50 );
+    //
+    // if there was anything wrong while last save process
+    //
+    if ( SPIFFS.exists( appprefs::ALERT_CONFIG_BCKP ) )
+    {
+      SPIFFS.remove( appprefs::LocalPrefs::alertConfigFile );
+      if ( SPIFFS.rename( appprefs::ALERT_CONFIG_BCKP, appprefs::LocalPrefs::alertConfigFile.c_str() ) )
+      {
+        elog.log( INFO, "%s: restore backup alert config file...OK", AlertConfObj::tag );
+      }
+      else
+      {
+        elog.log( ERROR, "%s: restore backup alert config file FAILED!", AlertConfObj::tag );
+      }
+    }
     cJSON *jsonObject = AlertConfObj::readAndParseFile( fileName );
     if ( jsonObject )
     {

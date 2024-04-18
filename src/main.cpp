@@ -144,7 +144,7 @@ void loop()
         //
         // DEBUG: testalert add
         //
-        addTestAlert();
+        // addTestAlert();
         break;
     }
     // mark new value

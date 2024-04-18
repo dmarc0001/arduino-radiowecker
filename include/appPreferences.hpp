@@ -21,31 +21,32 @@ namespace appprefs
   //
   // some values are depend from compiling mode...
   //
-  constexpr long BUGFIX_TIMEZONE_OFFSET = 3600L;               //! bug in esp32-s2 lib (timezone not working, und normal esp32 works)
-  constexpr const char *NTP_POOL_01{ "pool.ntp.org" };         //! ntp pool
-  constexpr const char *NTP_POOL_02{ "de.pool.ntp.org" };      //! ntp pool
-  constexpr gpio_num_t RANDOM_INIT_PORT = GPIO_NUM_0;          //! port for init random
-  constexpr const char *DEFAULT_HOSTNAME{ "alert" };           //! default hostname
-  constexpr const char *APPNAME{ "alert-app" };                //! app name
-  constexpr const char *ALERT_CONFIG{ "/alert.json" };         //! json file, includes alerts
-  constexpr const char *DEVICES_CONFIG{ "/devices.json" };     // json file describes devices
-  constexpr const uint16_t SYSLOG_PRIO{ 8 };                   //! standart syslog prio (user)
-  constexpr const uint16_t SYSLOG_PROTO{ 0 };                  //! standart syslog protocol (IETF)0
-  constexpr const char *WEB_PATH{ "/spiffs" };                 //! virtual path wegserver
-  constexpr const char *WEB_PARTITION_LABEL{ "mydata" };       //! label of the spiffs or null
-  constexpr uint32_t WIFI_MAXIMUM_RETRY{ 5 };                  //! Max connection retries
-  constexpr wifi_auth_mode_t WIFI_AUTH{ WIFI_AUTH_WPA2_PSK };  //! wifi auth method
-  constexpr gpio_num_t LED_STRIPE_POWER = GPIO_NUM_1;          //! Power switch LEDfge56j7zk8ui#
-  constexpr uint8_t LED_STRIPE_COUNT = 3;                      //! count of LED
-  constexpr gpio_num_t LED_STRIPE_RMT_TX_GPIO = GPIO_NUM_4;    //! (internal GPIO_NUM_18) control pin GPIO für led control
-  constexpr int LED_STRIP_BRIGHTNESS = 255;                    //! brightness led stripe
-  constexpr EOrder LED_RGB_ORDER = GRB;                        //! what order is the red/green/blue byte
-  constexpr uint32_t LED_STRIP_RESOLUTION_HZ = 10000000;       //! 10MHz resolution, 1 tick = 0.1us
-  constexpr uint8_t LED_WLAN = 0;                              //! indicator WLAN
-  constexpr uint8_t LED_ALERT = 1;                             //! indicator alert
-  constexpr uint8_t LED_HTTP = 2;                              //! indicator http activity
-  constexpr uint8_t LED_ALL = 255;                             //! indicator means all led'S
-  constexpr int32_t TASK_MARK_INTERVAL_MS = 43000;             //! interval between "mark" in tasks for debuging
+  constexpr long BUGFIX_TIMEZONE_OFFSET = 3600L;                 //! bug in esp32-s2 lib (timezone not working, und normal esp32 works)
+  constexpr const char *NTP_POOL_01{ "pool.ntp.org" };           //! ntp pool
+  constexpr const char *NTP_POOL_02{ "de.pool.ntp.org" };        //! ntp pool
+  constexpr gpio_num_t RANDOM_INIT_PORT = GPIO_NUM_0;            //! port for init random
+  constexpr const char *DEFAULT_HOSTNAME{ "alert" };             //! default hostname
+  constexpr const char *APPNAME{ "alert-app" };                  //! app name
+  constexpr const char *ALERT_CONFIG{ "/alert.json" };           //! json file, includes alerts
+  constexpr const char *ALERT_CONFIG_BCKP{ "/alert_bkp.json" };  //! json file, includes alerts
+  constexpr const char *DEVICES_CONFIG{ "/devices.json" };       // json file describes devices
+  constexpr const uint16_t SYSLOG_PRIO{ 8 };                     //! standart syslog prio (user)
+  constexpr const uint16_t SYSLOG_PROTO{ 0 };                    //! standart syslog protocol (IETF)0
+  constexpr const char *WEB_PATH{ "/spiffs" };                   //! virtual path wegserver
+  constexpr const char *WEB_PARTITION_LABEL{ "mydata" };         //! label of the spiffs or null
+  constexpr uint32_t WIFI_MAXIMUM_RETRY{ 5 };                    //! Max connection retries
+  constexpr wifi_auth_mode_t WIFI_AUTH{ WIFI_AUTH_WPA2_PSK };    //! wifi auth method
+  constexpr gpio_num_t LED_STRIPE_POWER = GPIO_NUM_1;            //! Power switch LEDfge56j7zk8ui#
+  constexpr uint8_t LED_STRIPE_COUNT = 3;                        //! count of LED
+  constexpr gpio_num_t LED_STRIPE_RMT_TX_GPIO = GPIO_NUM_4;      //! (internal GPIO_NUM_18) control pin GPIO für led control
+  constexpr int LED_STRIP_BRIGHTNESS = 255;                      //! brightness led stripe
+  constexpr EOrder LED_RGB_ORDER = GRB;                          //! what order is the red/green/blue byte
+  constexpr uint32_t LED_STRIP_RESOLUTION_HZ = 10000000;         //! 10MHz resolution, 1 tick = 0.1us
+  constexpr uint8_t LED_WLAN = 0;                                //! indicator WLAN
+  constexpr uint8_t LED_ALERT = 1;                               //! indicator alert
+  constexpr uint8_t LED_HTTP = 2;                                //! indicator http activity
+  constexpr uint8_t LED_ALL = 255;                               //! indicator means all led'S
+  constexpr int32_t TASK_MARK_INTERVAL_MS = 43000;               //! interval between "mark" in tasks for debuging
 
   class LocalPrefs
   {

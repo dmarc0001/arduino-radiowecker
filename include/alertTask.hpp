@@ -14,15 +14,15 @@ namespace alertclock
   class AlertTask
   {
     private:
-    static const char *tag;
-    static bool isRunning;
-    static soundtouch::SoundTouchAlertPtrList activeAlertList;
+    static const char *tag;                                     //! tag for debug
+    static bool isRunning;                                      //! tsk is running
+    static soundtouch::SoundTouchAlertPtrList activeAlertList;  //! list with active tasks
 
     public:
     static void start();
 
     private:
-    static void alTask( void * );
+    static void alTask( void * );  //! task for aleerts
     static bool startAlert( AlertEntryPtr );
     static soundtouch::SoundTouchDeviceRunningMode alertLoop( soundtouch::SoundTouchAlertPtr );
   };
